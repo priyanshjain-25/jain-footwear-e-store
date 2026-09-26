@@ -32,7 +32,7 @@ function Home({ onLoginClick }) {
     const loadProducts = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/products"
+          "${import.meta.env.vite_api_url}/api/products"
         );
 
         const data = await response.json();
@@ -175,7 +175,7 @@ function Home({ onLoginClick }) {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/orders/my-orders/${currentUser.id}`,
+        `${import.meta.env.vite_api_url}/api/orders/my-orders/${currentUser.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -232,7 +232,7 @@ function Home({ onLoginClick }) {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/orders/my-orders/${currentUser.id}`,
+        `${import.meta.env.vite_api_url}/api/orders/my-orders/${currentUser.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -293,7 +293,7 @@ useEffect(() => {
       setCancellingOrderId(orderId);
 
       const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/cancel`,
+        `${import.meta.env.vite_api_url}/api/orders/${orderId}/cancel`,
         {
           method: "PUT",
           headers: {
@@ -390,7 +390,7 @@ useEffect(() => {
       setRequestingOrderId(orderId);
 
       const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/return-request`,
+        `${import.meta.env.vite_api_url}/api/orders/${orderId}/return-request`,
         {
           method: "PUT",
           headers: {

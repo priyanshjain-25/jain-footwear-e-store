@@ -63,7 +63,7 @@ function Checkout({ cart, onBack, onOrderPlaced }) {
 
       // CREATE RAZORPAY ORDER
       const orderResponse = await fetch(
-        "http://localhost:5000/api/payment/create-order",
+        "${import.meta.env.vite_api_url}/api/payment/create-order",
         {
           method: "POST",
           headers: {
@@ -125,7 +125,7 @@ function Checkout({ cart, onBack, onOrderPlaced }) {
           try {
             // VERIFY PAYMENT + CREATE ORDER
             const verifyResponse = await fetch(
-              "http://localhost:5000/api/payment/verify-and-create-order",
+              "${import.meta.env.vite_api_url}/api/payment/verify-and-create-order",
               {
                 method: "POST",
                 headers: {

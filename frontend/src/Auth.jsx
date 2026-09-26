@@ -30,7 +30,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/register",
+        "${import.meta.env.vite_api_url}/api/auth/register",
         {
           method: "POST",
           headers: {
@@ -67,7 +67,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/verify-email",
+        "${import.meta.env.vite_api_url}/api/auth/verify-email",
         {
           method: "POST",
           headers: {
@@ -116,7 +116,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/resend-verification",
+        "${import.meta.env.vite_api_url}/api/auth/resend-verification",
         {
           method: "POST",
           headers: {
@@ -156,7 +156,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        "${import.meta.env.vite_api_url}/api/auth/login",
         {
           method: "POST",
           headers: {
