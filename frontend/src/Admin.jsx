@@ -36,7 +36,7 @@ function Admin() {
   const loadProducts = async () => {
     try {
       const response = await fetch(
-        "${import.meta.env.VITE_API_URL}/api/products"
+        `${import.meta.env.VITE_API_URL}/api/products`
       );
 
       const data = await response.json();
@@ -49,21 +49,17 @@ function Admin() {
 
       setProducts(data);
     } catch (error) {
-      console.error(
-        "Failed to load products:",
-        error
-      );
+      console.error("Failed to load products:", error);
     }
   };
 
   // ======================================================
   // LOAD ORDERS
-  // ADMIN TOKEN REQUIRED
   // ======================================================
   const loadOrders = async () => {
     try {
       const response = await fetch(
-        "${import.meta.env.vite_api_url}/api/orders",
+        `${import.meta.env.VITE_API_URL}/api/orders`,
         {
           headers: {
             ...getAdminHeaders(),
@@ -81,15 +77,14 @@ function Admin() {
 
       setOrders(data);
     } catch (error) {
-      console.error(
-        "Failed to load orders:",
-        error
-      );
+      console.error("Failed to load orders:", error);
 
       if (
-        error.message ===
-        "Admin authentication required"
+        error.message === "Admin authentication required" ||
+        error.message === "Invalid or expired admin token"
       ) {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminUser");
         window.location.href = "/admin";
       }
     }
@@ -112,11 +107,11 @@ function Admin() {
         const [productsResponse, ordersResponse] =
           await Promise.all([
             fetch(
-              "${import.meta.env.VITE_API_URL}/api/products"
+              `${import.meta.env.VITE_API_URL}/api/products`
             ),
 
             fetch(
-              "${import.meta.env.vite_api_url}/api/orders",
+              `${import.meta.env.VITE_API_URL}/api/orders`,
               {
                 headers: {
                   Authorization: `Bearer ${adminToken}`,
@@ -219,7 +214,7 @@ function Admin() {
 
       const url = editingId
         ? `${import.meta.env.VITE_API_URL}/api/products/${editingId}`
-        : "${import.meta.env.vite_api_url}/api/products";
+        : `${import.meta.env.VITE_API_URL}/api/products`;
 
       const method = editingId ? "PUT" : "POST";
 
@@ -235,8 +230,7 @@ function Admin() {
 
       if (!response.ok) {
         throw new Error(
-          result.message ||
-            "Something went wrong"
+          result.message || "Something went wrong"
         );
       }
 
@@ -352,7 +346,7 @@ function Admin() {
   ) => {
     try {
       const response = await fetch(
-        `${import.meta.env.vite_api_url}/api/orders/${orderId}/status`,
+        `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
         {
           method: "PUT",
 
@@ -861,9 +855,7 @@ function Admin() {
 
                       <button
                         onClick={() =>
-                          handleDelete(
-                            product._id
-                          )
+                          handleDelete(product._id)
                         }
                         className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700"
                       >
@@ -1072,8 +1064,7 @@ function Admin() {
 
                               {item.size && (
                                 <p className="text-sm text-gray-500">
-                                  Size:{" "}
-                                  {item.size}
+                                  Size: {item.size}
                                 </p>
                               )}
 
@@ -1326,8 +1317,7 @@ function Admin() {
 
                               {item.size && (
                                 <p className="text-sm text-gray-500">
-                                  Size:{" "}
-                                  {item.size}
+                                  Size: {item.size}
                                 </p>
                               )}
 

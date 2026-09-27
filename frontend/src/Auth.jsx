@@ -2,9 +2,11 @@ import { useState } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function Auth({ onLogin }) {
+function Auth({ onLogin, onAdminClick }) {
   const [isLogin, setIsLogin] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -181,6 +183,7 @@ function Auth({ onLogin }) {
       }
 
       localStorage.setItem("token", data.token);
+
       localStorage.setItem(
         "user",
         JSON.stringify(data.user)
@@ -189,6 +192,46 @@ function Auth({ onLogin }) {
       if (onLogin) {
         onLogin(data.user);
       }
+    } catch (error) {
+      console.error(error);
+      setMessage("Unable to connect to server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // FORGOT PASSWORD
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(
+          data.message || "Unable to process request"
+        );
+        return;
+      }
+
+      setMessage(
+        "If an account exists with this email, a password reset link has been sent to your email."
+      );
     } catch (error) {
       console.error(error);
       setMessage("Unable to connect to server.");
@@ -217,10 +260,12 @@ function Auth({ onLogin }) {
             <div className="mt-10 space-y-5">
               <div className="flex gap-4">
                 <div className="text-2xl">✓</div>
+
                 <div>
                   <h3 className="font-semibold">
                     Secure Account
                   </h3>
+
                   <p className="text-blue-100 text-sm">
                     Your account stays protected.
                   </p>
@@ -229,10 +274,12 @@ function Auth({ onLogin }) {
 
               <div className="flex gap-4">
                 <div className="text-2xl">✓</div>
+
                 <div>
                   <h3 className="font-semibold">
                     Email Verification
                   </h3>
+
                   <p className="text-blue-100 text-sm">
                     Only verified emails can login.
                   </p>
@@ -244,6 +291,7 @@ function Auth({ onLogin }) {
           {/* RIGHT */}
           <div className="p-8 md:p-12">
             <div className="max-w-md mx-auto">
+
               <div className="mb-8">
                 <p className="text-blue-600 font-semibold text-sm mb-2">
                   EMAIL VERIFICATION
@@ -286,7 +334,9 @@ function Auth({ onLogin }) {
                   disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-4 rounded-xl font-semibold transition"
                 >
-                  {loading ? "Verifying..." : "Verify Email"}
+                  {loading
+                    ? "Verifying..."
+                    : "Verify Email"}
                 </button>
               </form>
 
@@ -322,6 +372,137 @@ function Auth({ onLogin }) {
     );
   }
 
+  // FORGOT PASSWORD SCREEN
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
+
+          {/* LEFT */}
+          <div className="hidden md:flex bg-blue-600 text-white p-12 flex-col justify-center">
+            <p className="text-blue-100 font-semibold mb-3">
+              ACCOUNT RECOVERY
+            </p>
+
+            <h1 className="text-5xl font-bold leading-tight">
+              Reset
+              <br />
+              Password
+            </h1>
+
+            <p className="text-blue-100 text-lg mt-6 leading-relaxed">
+              Enter your registered email address and
+              we will send you a secure password reset link.
+            </p>
+
+            <div className="mt-12 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-xl">
+                  ✓
+                </div>
+
+                <div>
+                  <p className="font-semibold">
+                    Secure Reset
+                  </p>
+
+                  <p className="text-blue-100 text-sm">
+                    Your password stays protected.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-xl">
+                  ✓
+                </div>
+
+                <div>
+                  <p className="font-semibold">
+                    Email Link
+                  </p>
+
+                  <p className="text-blue-100 text-sm">
+                    Reset using your registered email.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div className="p-8 md:p-12 flex items-center">
+            <div className="w-full max-w-md mx-auto">
+
+              <div className="mb-8">
+                <p className="text-blue-600 font-semibold text-sm mb-2">
+                  FORGOT PASSWORD
+                </p>
+
+                <h2 className="text-3xl font-bold text-gray-900">
+                  Reset your password
+                </h2>
+
+                <p className="text-gray-500 mt-2">
+                  Enter the email linked to your account.
+                </p>
+              </div>
+
+              <form
+                onSubmit={handleForgotPassword}
+                className="space-y-5"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-4 rounded-xl font-semibold transition shadow-sm"
+                >
+                  {loading
+                    ? "Sending..."
+                    : "Send Reset Link"}
+                </button>
+              </form>
+
+              {message && (
+                <div className="mt-5 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-center text-gray-700">
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setMessage("");
+                }}
+                className="w-full mt-5 text-gray-500 hover:text-gray-800 text-sm"
+              >
+                ← Back to Login
+              </button>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
@@ -346,6 +527,7 @@ function Auth({ onLogin }) {
           </div>
 
           <div className="mt-12 space-y-6">
+
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-xl">
                 ✓
@@ -393,12 +575,14 @@ function Auth({ onLogin }) {
                 </p>
               </div>
             </div>
+
           </div>
         </div>
 
         {/* RIGHT FORM */}
         <div className="p-8 md:p-12 flex items-center">
           <div className="w-full max-w-md mx-auto">
+
             <div className="mb-8">
               <p className="text-blue-600 font-semibold text-sm mb-2">
                 {isLogin
@@ -484,7 +668,11 @@ function Auth({ onLogin }) {
                 </label>
 
                 <input
-                  type="password"
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
                   name="password"
                   placeholder="Enter your password"
                   value={formData.password}
@@ -493,7 +681,35 @@ function Auth({ onLogin }) {
                   minLength="6"
                   className="w-full border border-gray-300 rounded-xl px-4 py-3.5 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 />
+
+                <label className="flex items-center gap-2 mt-2 text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(e) =>
+                      setShowPassword(e.target.checked)
+                    }
+                    className="w-4 h-4"
+                  />
+
+                  Show password
+                </label>
               </div>
+
+              {isLogin && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPassword(true);
+                      setMessage("");
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -531,6 +747,7 @@ function Auth({ onLogin }) {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setMessage("");
+                setShowPassword(false);
               }}
               className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 py-3.5 rounded-xl font-semibold transition"
             >
@@ -539,10 +756,26 @@ function Auth({ onLogin }) {
                 : "Already have an account? Login"}
             </button>
 
+            {/* ADMIN LOGIN */}
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onAdminClick) {
+                    onAdminClick();
+                  }
+                }}
+                className="w-full mt-4 border border-gray-300 text-gray-700 hover:bg-gray-50 py-3.5 rounded-xl font-semibold transition"
+              >
+                Admin Login
+              </button>
+            )}
+
             <p className="text-center text-xs text-gray-400 mt-6">
               By continuing, you agree to Jain Footwear's
               terms and conditions.
             </p>
+
           </div>
         </div>
       </div>
