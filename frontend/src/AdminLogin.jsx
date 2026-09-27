@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AdminLogin({ onLogin, onBack }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +16,7 @@ function AdminLogin({ onLogin, onBack }) {
 
     try {
       const response = await fetch(
-        "${import.meta.env.vite_api_url}/api/admin-auth/login",
+  `${API_URL}/api/admin-auth/login`,
         {
           method: "POST",
           headers: {

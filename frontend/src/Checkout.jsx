@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Checkout({ cart, onBack, onOrderPlaced }) {
   const [form, setForm] = useState({
     name: "",
@@ -62,18 +64,18 @@ function Checkout({ cart, onBack, onOrderPlaced }) {
       setLoading(true);
 
       // CREATE RAZORPAY ORDER
-      const orderResponse = await fetch(
-        "${import.meta.env.vite_api_url}/api/payment/create-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: totalAmount,
-          }),
-        }
-      );
+     const orderResponse = await fetch(
+  `${API_URL}/api/payment/create-order`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: totalAmount,
+    }),
+  }
+);
 
       const orderData = await orderResponse.json();
 
@@ -125,8 +127,8 @@ function Checkout({ cart, onBack, onOrderPlaced }) {
           try {
             // VERIFY PAYMENT + CREATE ORDER
             const verifyResponse = await fetch(
-              "${import.meta.env.vite_api_url}/api/payment/verify-and-create-order",
-              {
+            `${API_URL}/api/payment/verify-and-create-order`,
+             {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
