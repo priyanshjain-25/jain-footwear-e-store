@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 function AdminLogin({ onLogin, onBack }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +17,7 @@ function AdminLogin({ onLogin, onBack }) {
 
     try {
       const response = await fetch(
-  `${API_URL}/api/admin-auth/login`,
+        `${API_URL}/api/admin-auth/login`,
         {
           method: "POST",
           headers: {
@@ -32,11 +33,16 @@ function AdminLogin({ onLogin, onBack }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Admin login failed");
+        throw new Error(
+          data.message || "Admin login failed"
+        );
       }
 
       localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("adminUser", JSON.stringify(data.admin));
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify(data.admin)
+      );
 
       onLogin();
     } catch (error) {
@@ -63,7 +69,10 @@ function AdminLogin({ onLogin, onBack }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+        >
           <input
             type="email"
             placeholder="Admin Email"
@@ -74,7 +83,7 @@ function AdminLogin({ onLogin, onBack }) {
           />
 
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Admin Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -82,12 +91,27 @@ function AdminLogin({ onLogin, onBack }) {
             required
           />
 
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) =>
+                setShowPassword(e.target.checked)
+              }
+              className="w-4 h-4"
+            />
+
+            Show password
+          </label>
+
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-black text-white py-3 rounded-lg font-semibold"
           >
-            {loading ? "Logging in..." : "Login as Admin"}
+            {loading
+              ? "Logging in..."
+              : "Login as Admin"}
           </button>
         </form>
 
