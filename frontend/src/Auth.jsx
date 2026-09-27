@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Auth({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -30,7 +32,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "${import.meta.env.vite_api_url}/api/auth/register",
+        `${API_URL}/api/auth/register`,
         {
           method: "POST",
           headers: {
@@ -48,9 +50,7 @@ function Auth({ onLogin }) {
       }
 
       setIsVerifying(true);
-      setMessage(
-        "Verification code sent to your email."
-      );
+      setMessage("Verification code sent to your email.");
     } catch (error) {
       console.error(error);
       setMessage("Unable to connect to server.");
@@ -67,7 +67,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "${import.meta.env.vite_api_url}/api/auth/verify-email",
+        `${API_URL}/api/auth/verify-email`,
         {
           method: "POST",
           headers: {
@@ -116,7 +116,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "${import.meta.env.vite_api_url}/api/auth/resend-verification",
+        `${API_URL}/api/auth/resend-verification`,
         {
           method: "POST",
           headers: {
@@ -156,7 +156,7 @@ function Auth({ onLogin }) {
 
     try {
       const response = await fetch(
-        "${import.meta.env.vite_api_url}/api/auth/login",
+        `${API_URL}/api/auth/login`,
         {
           method: "POST",
           headers: {
@@ -201,12 +201,10 @@ function Auth({ onLogin }) {
   if (isVerifying) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-10">
-
         <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
 
           {/* LEFT */}
           <div className="hidden md:flex bg-blue-600 text-white p-12 flex-col justify-center">
-
             <h1 className="text-4xl font-bold mb-4">
               Jain Footwear
             </h1>
@@ -217,7 +215,6 @@ function Auth({ onLogin }) {
             </p>
 
             <div className="mt-10 space-y-5">
-
               <div className="flex gap-4">
                 <div className="text-2xl">✓</div>
                 <div>
@@ -241,15 +238,12 @@ function Auth({ onLogin }) {
                   </p>
                 </div>
               </div>
-
             </div>
           </div>
 
           {/* RIGHT */}
           <div className="p-8 md:p-12">
-
             <div className="max-w-md mx-auto">
-
               <div className="mb-8">
                 <p className="text-blue-600 font-semibold text-sm mb-2">
                   EMAIL VERIFICATION
@@ -272,7 +266,6 @@ function Auth({ onLogin }) {
                 onSubmit={handleVerify}
                 className="space-y-5"
               >
-
                 <input
                   type="text"
                   inputMode="numeric"
@@ -293,11 +286,8 @@ function Auth({ onLogin }) {
                   disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-4 rounded-xl font-semibold transition"
                 >
-                  {loading
-                    ? "Verifying..."
-                    : "Verify Email"}
+                  {loading ? "Verifying..." : "Verify Email"}
                 </button>
-
               </form>
 
               <button
@@ -325,10 +315,8 @@ function Auth({ onLogin }) {
               >
                 ← Back to Login
               </button>
-
             </div>
           </div>
-
         </div>
       </div>
     );
@@ -336,14 +324,11 @@ function Auth({ onLogin }) {
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-10">
-
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2">
 
         {/* LEFT BRANDING */}
         <div className="hidden md:flex bg-blue-600 text-white p-12 flex-col justify-center">
-
           <div>
-
             <p className="text-blue-100 font-semibold mb-3">
               WELCOME TO
             </p>
@@ -358,11 +343,9 @@ function Auth({ onLogin }) {
               Find footwear for every style,
               every occasion and every step.
             </p>
-
           </div>
 
           <div className="mt-12 space-y-6">
-
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-xl">
                 ✓
@@ -410,18 +393,13 @@ function Auth({ onLogin }) {
                 </p>
               </div>
             </div>
-
           </div>
-
         </div>
 
         {/* RIGHT FORM */}
         <div className="p-8 md:p-12 flex items-center">
-
           <div className="w-full max-w-md mx-auto">
-
             <div className="mb-8">
-
               <p className="text-blue-600 font-semibold text-sm mb-2">
                 {isLogin
                   ? "WELCOME BACK"
@@ -439,7 +417,6 @@ function Auth({ onLogin }) {
                   ? "Enter your details to continue shopping."
                   : "Create an account to start shopping."}
               </p>
-
             </div>
 
             <form
@@ -450,7 +427,6 @@ function Auth({ onLogin }) {
               }
               className="space-y-4"
             >
-
               {!isLogin && (
                 <>
                   <div>
@@ -532,7 +508,6 @@ function Auth({ onLogin }) {
                   ? "Login"
                   : "Create Account"}
               </button>
-
             </form>
 
             {message && (
@@ -543,9 +518,11 @@ function Auth({ onLogin }) {
 
             <div className="flex items-center gap-3 my-7">
               <div className="h-px bg-gray-200 flex-1"></div>
+
               <span className="text-gray-400 text-sm">
                 OR
               </span>
+
               <div className="h-px bg-gray-200 flex-1"></div>
             </div>
 
@@ -566,11 +543,8 @@ function Auth({ onLogin }) {
               By continuing, you agree to Jain Footwear's
               terms and conditions.
             </p>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );
