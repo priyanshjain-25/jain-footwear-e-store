@@ -3,6 +3,8 @@ import ProductDetails from "./ProductDetails";
 import Cart from "./Cart";
 import Checkout from "./Checkout";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Home({ onLoginClick }) {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
@@ -32,7 +34,7 @@ function Home({ onLoginClick }) {
     const loadProducts = async () => {
       try {
         const response = await fetch(
-          "${import.meta.env.vite_api_url}/api/products"
+          `${API_URL}/api/products`,
         );
 
         const data = await response.json();
@@ -175,7 +177,7 @@ function Home({ onLoginClick }) {
       }
 
       const response = await fetch(
-        `${import.meta.env.vite_api_url}/api/orders/my-orders/${currentUser.id}`,
+        `${API_URL}/api/orders/my-orders/${currentUser.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -232,7 +234,7 @@ function Home({ onLoginClick }) {
       }
 
       const response = await fetch(
-        `${import.meta.env.vite_api_url}/api/orders/my-orders/${currentUser.id}`,
+        `${API_URL}/api/orders/my-orders/${currentUser.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -293,7 +295,7 @@ useEffect(() => {
       setCancellingOrderId(orderId);
 
       const response = await fetch(
-        `${import.meta.env.vite_api_url}/api/orders/${orderId}/cancel`,
+        `${API_URL}/api/orders/${orderId}/cancel`,
         {
           method: "PUT",
           headers: {
@@ -390,7 +392,7 @@ useEffect(() => {
       setRequestingOrderId(orderId);
 
       const response = await fetch(
-        `${import.meta.env.vite_api_url}/api/orders/${orderId}/return-request`,
+        `${API_URL}/api/orders/${orderId}/return-request`,
         {
           method: "PUT",
           headers: {
