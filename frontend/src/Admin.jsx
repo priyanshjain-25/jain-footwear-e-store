@@ -9,14 +9,15 @@ function Admin() {
   const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState({
-    name: "",
-    category: "Men",
-    brand: "",
-    price: "",
-    sizes: "",
-    description: "",
-    stock: "",
-  });
+  name: "",
+  category: "Men",
+  brand: "",
+  mrp: "",
+  price: "",
+  sizes: "",
+  description: "",
+  stock: "",
+});
 
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -176,12 +177,14 @@ function Admin() {
   // ======================================================
   // FORM CHANGE
   // ======================================================
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+ const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  setFormData((previousData) => ({
+    ...previousData,
+    [name]: value,
+  }));
+};
 
   // ======================================================
   // ADD / UPDATE PRODUCT
@@ -197,8 +200,8 @@ function Admin() {
       data.append("name", formData.name);
       data.append("category", formData.category);
       data.append("brand", formData.brand);
+      data.append("mrp", formData.mrp);
       data.append("price", formData.price);
-
       const sizeArray = formData.sizes
         .split(",")
         .map((size) => size.trim())
@@ -220,6 +223,14 @@ function Admin() {
         data.append("image", image);
       }
 
+      console.log("========== FORM DATA ==========");
+
+for (const [key, value] of data.entries()) {
+  console.log(key, ":", value);
+}
+
+console.log("================================");
+
       const url = editingId
         ? `${API_URL}/api/products/${editingId}`
         : `${API_URL}/api/products`;
@@ -235,6 +246,7 @@ function Admin() {
       });
 
       const result = await response.json();
+
 
       if (!response.ok) {
         throw new Error(
@@ -269,6 +281,7 @@ function Admin() {
       name: "",
       category: "Men",
       brand: "",
+      mrp: "",
       price: "",
       sizes: "",
       description: "",
@@ -288,6 +301,7 @@ function Admin() {
       name: product.name || "",
       category: product.category || "Men",
       brand: product.brand || "",
+      mrp: product.mrp || "",
       price: product.price || "",
       sizes: product.sizes
         ? product.sizes.join(", ")
@@ -832,21 +846,46 @@ function Admin() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1">
-                Price (₹)
-              </label>
+  <label className="block text-sm font-semibold mb-1">
+    MRP (₹)
+  </label>
 
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                min="0"
-                placeholder="999"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
+  <input
+    type="number"
+    name="mrp"
+    value={formData.mrp}
+    onChange={handleChange}
+    required
+    min="0"
+    placeholder="2000"
+    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+  />
+
+  <p className="text-xs text-gray-500 mt-1">
+    Original Maximum Retail Price
+  </p>
+</div>
+
+<div>
+  <label className="block text-sm font-semibold mb-1">
+    Selling Price (₹)
+  </label>
+
+  <input
+    type="number"
+    name="price"
+    value={formData.price}
+    onChange={handleChange}
+    required
+    min="0"
+    placeholder="1499"
+    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+  />
+
+  <p className="text-xs text-gray-500 mt-1">
+    Actual price customer will pay
+  </p>
+</div>
 
             <div>
               <label className="block text-sm font-semibold mb-1">
@@ -1002,9 +1041,32 @@ function Admin() {
                       </p>
                     )}
 
-                    <p className="text-lg font-bold mt-2">
-                      ₹{product.price}
-                    </p>
+                    {Number(product.mrp) > Number(product.price) ? (
+  <div className="mt-2">
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-500 line-through">
+        ₹{product.mrp}
+      </span>
+
+      <span className="text-xs font-semibold text-green-600">
+        {Math.round(
+          ((Number(product.mrp) - Number(product.price)) /
+            Number(product.mrp)) *
+            100
+        )}
+        % OFF
+      </span>
+    </div>
+
+    <p className="text-lg font-bold">
+      ₹{product.price}
+    </p>
+  </div>
+) : (
+  <p className="text-lg font-bold mt-2">
+    ₹{product.price}
+  </p>
+)}
 
                     <p className="text-xs text-gray-500 mt-1">
                       Stock: {product.stock}

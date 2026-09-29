@@ -18,9 +18,18 @@ const productSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Original MRP
+    mrp: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    // Actual selling price
     price: {
       type: Number,
       required: true,
+      min: 0,
     },
 
     sizes: {

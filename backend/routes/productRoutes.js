@@ -59,6 +59,7 @@ router.post(
         name: req.body.name,
         category: req.body.category,
         brand: req.body.brand,
+        mrp: Number(req.body.mrp),
         price: Number(req.body.price),
         sizes: req.body.sizes
           ? JSON.parse(req.body.sizes)
@@ -87,11 +88,17 @@ router.put(
   adminAuth,
   upload.single("image"),
   async (req, res) => {
-    try {
-      const updateData = {
+  try {
+    console.log("========== UPDATE PRODUCT ==========");
+    console.log("PRODUCT ID:", req.params.id);
+    console.log("UPDATE BODY:", req.body);
+    console.log("====================================");
+
+    const updateData = {
         name: req.body.name,
         category: req.body.category,
         brand: req.body.brand,
+        mrp: Number(req.body.mrp),
         price: Number(req.body.price),
         sizes: req.body.sizes
           ? JSON.parse(req.body.sizes)
