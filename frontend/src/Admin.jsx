@@ -9,20 +9,27 @@ function Admin() {
   const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState({
-  name: "",
-  category: "Men",
-  brand: "",
-  mrp: "",
-  price: "",
-  sizes: "",
-  description: "",
-  stock: "",
-});
+    name: "",
+    category: "Men",
+    brand: "",
+    mrp: "",
+    price: "",
+    sizes: "",
+    description: "",
+    stock: "",
+  });
 
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // ======================================================
+  // PRODUCT DESIGNS
+  // ======================================================
+  const [designs, setDesigns] = useState([]);
+
+  // ======================================================
   // ORDER MANAGEMENT
+  // ======================================================
   const [orderSearch, setOrderSearch] = useState("");
   const [orderFilter, setOrderFilter] = useState("All");
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -61,7 +68,10 @@ function Admin() {
 
       setProducts(data);
     } catch (error) {
-      console.error("Failed to load products:", error);
+      console.error(
+        "Failed to load products:",
+        error
+      );
     }
   };
 
@@ -89,7 +99,10 @@ function Admin() {
 
       setOrders(data);
     } catch (error) {
-      console.error("Failed to load orders:", error);
+      console.error(
+        "Failed to load orders:",
+        error
+      );
 
       if (
         error.message ===
@@ -99,6 +112,7 @@ function Admin() {
       ) {
         localStorage.removeItem("adminToken");
         localStorage.removeItem("adminUser");
+
         window.location.href = "/admin";
       }
     }
@@ -118,16 +132,18 @@ function Admin() {
           return;
         }
 
-        const [productsResponse, ordersResponse] =
-          await Promise.all([
-            fetch(`${API_URL}/api/products`),
+        const [
+          productsResponse,
+          ordersResponse,
+        ] = await Promise.all([
+          fetch(`${API_URL}/api/products`),
 
-            fetch(`${API_URL}/api/orders`, {
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-              },
-            }),
-          ]);
+          fetch(`${API_URL}/api/orders`, {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }),
+        ]);
 
         const productsData =
           await productsResponse.json();
@@ -177,14 +193,109 @@ function Admin() {
   // ======================================================
   // FORM CHANGE
   // ======================================================
- const handleChange = (e) => {
-  const { name, value } = e.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  setFormData((previousData) => ({
-    ...previousData,
-    [name]: value,
-  }));
-};
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
+  };
+
+  // ======================================================
+  // ADD DESIGN
+  // ======================================================
+  const addDesign = () => {
+    setDesigns((previousDesigns) => [
+      ...previousDesigns,
+      {
+        name: "",
+        stock: "",
+        images: [],
+        existingImages: [],
+      },
+    ]);
+  };
+
+  // ======================================================
+  // REMOVE DESIGN
+  // ======================================================
+  const removeDesign = (index) => {
+    setDesigns((previousDesigns) =>
+      previousDesigns.filter(
+        (_, designIndex) =>
+          designIndex !== index
+      )
+    );
+  };
+
+  // ======================================================
+  // UPDATE DESIGN
+  // ======================================================
+  const updateDesign = (
+    index,
+    field,
+    value
+  ) => {
+    setDesigns((previousDesigns) =>
+      previousDesigns.map(
+        (design, designIndex) =>
+          designIndex === index
+            ? {
+                ...design,
+                [field]: value,
+              }
+            : design
+      )
+    );
+  };
+
+  // ======================================================
+  // UPDATE DESIGN IMAGES
+  // ======================================================
+  const updateDesignImages = (
+    index,
+    files
+  ) => {
+    setDesigns((previousDesigns) =>
+      previousDesigns.map(
+        (design, designIndex) =>
+          designIndex === index
+            ? {
+                ...design,
+                images: Array.from(files),
+              }
+            : design
+      )
+    );
+  };
+
+  // ======================================================
+  // REMOVE EXISTING DESIGN IMAGE
+  // ======================================================
+  const removeExistingDesignImage = (
+    designIndex,
+    imageIndex
+  ) => {
+    setDesigns((previousDesigns) =>
+      previousDesigns.map(
+        (design, index) => {
+          if (index !== designIndex) {
+            return design;
+          }
+
+          return {
+            ...design,
+            existingImages:
+              design.existingImages.filter(
+                (_, imgIndex) =>
+                  imgIndex !== imageIndex
+              ),
+          };
+        }
+      )
+    );
+  };
 
   // ======================================================
   // ADD / UPDATE PRODUCT
@@ -197,15 +308,39 @@ function Admin() {
     try {
       const data = new FormData();
 
-      data.append("name", formData.name);
-      data.append("category", formData.category);
-      data.append("brand", formData.brand);
-      data.append("mrp", formData.mrp);
-      data.append("price", formData.price);
-      const sizeArray = formData.sizes
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean);
+      // --------------------------------------------------
+      // BASIC PRODUCT DATA
+      // --------------------------------------------------
+      data.append(
+        "name",
+        formData.name
+      );
+
+      data.append(
+        "category",
+        formData.category
+      );
+
+      data.append(
+        "brand",
+        formData.brand
+      );
+
+      data.append(
+        "mrp",
+        formData.mrp
+      );
+
+      data.append(
+        "price",
+        formData.price
+      );
+
+      const sizeArray =
+        formData.sizes
+          .split(",")
+          .map((size) => size.trim())
+          .filter(Boolean);
 
       data.append(
         "sizes",
@@ -217,40 +352,116 @@ function Admin() {
         formData.description
       );
 
-      data.append("stock", formData.stock);
+      data.append(
+        "stock",
+        formData.stock
+      );
 
+      // --------------------------------------------------
+      // MAIN PRODUCT IMAGE
+      // --------------------------------------------------
       if (image) {
-        data.append("image", image);
+        data.append(
+          "image",
+          image
+        );
       }
 
-      console.log("========== FORM DATA ==========");
+      // --------------------------------------------------
+      // DESIGNS
+      // --------------------------------------------------
+      const designsForBackend =
+        designs.map((design) => ({
+          name: design.name,
+          stock: Number(
+            design.stock || 0
+          ),
+          existingImages:
+            design.existingImages || [],
+          imageCount:
+            design.images?.length || 0,
+        }));
 
-for (const [key, value] of data.entries()) {
-  console.log(key, ":", value);
-}
+      if (designs.length > 0) {
+        data.append(
+          "designs",
+          JSON.stringify(
+            designsForBackend
+          )
+        );
+      }
 
-console.log("================================");
+      // --------------------------------------------------
+      // DESIGN IMAGES
+      // --------------------------------------------------
+      designs.forEach((design) => {
+        if (
+          design.images &&
+          design.images.length > 0
+        ) {
+          design.images.forEach(
+            (file) => {
+              data.append(
+                "designImages",
+                file
+              );
+            }
+          );
+        }
+      });
 
+      // --------------------------------------------------
+      // DEBUG
+      // --------------------------------------------------
+      console.log(
+        "========== FORM DATA =========="
+      );
+
+      for (const [
+        key,
+        value,
+      ] of data.entries()) {
+        console.log(
+          key,
+          ":",
+          value
+        );
+      }
+
+      console.log(
+        "================================"
+      );
+
+      // --------------------------------------------------
+      // URL + METHOD
+      // --------------------------------------------------
       const url = editingId
         ? `${API_URL}/api/products/${editingId}`
         : `${API_URL}/api/products`;
 
-      const method = editingId ? "PUT" : "POST";
+      const method = editingId
+        ? "PUT"
+        : "POST";
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          ...getAdminHeaders(),
-        },
-        body: data,
-      });
+      // --------------------------------------------------
+      // REQUEST
+      // --------------------------------------------------
+      const response =
+        await fetch(url, {
+          method,
+          headers: {
+            ...getAdminHeaders(),
+          },
+          body: data,
+        });
 
-      const result = await response.json();
-
+      const result =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Something went wrong"
+          result.message ||
+            "Something went wrong"
         );
       }
 
@@ -265,7 +476,11 @@ console.log("================================");
       await loadProducts();
     } catch (error) {
       console.error(error);
-      alert(error.message);
+
+      alert(
+        error.message ||
+          "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
@@ -289,6 +504,7 @@ console.log("================================");
     });
 
     setImage(null);
+    setDesigns([]);
   };
 
   // ======================================================
@@ -299,18 +515,49 @@ console.log("================================");
 
     setFormData({
       name: product.name || "",
-      category: product.category || "Men",
+      category:
+        product.category || "Men",
       brand: product.brand || "",
-      mrp: product.mrp || "",
-      price: product.price || "",
-      sizes: product.sizes
-        ? product.sizes.join(", ")
-        : "",
-      description: product.description || "",
-      stock: product.stock || "",
+      mrp:
+        product.mrp ?? "",
+      price:
+        product.price ?? "",
+      sizes:
+        Array.isArray(product.sizes)
+          ? product.sizes.join(", ")
+          : "",
+      description:
+        product.description || "",
+      stock:
+        product.stock ?? "",
     });
 
     setImage(null);
+
+    // Load existing designs
+    if (
+      Array.isArray(product.designs)
+    ) {
+      setDesigns(
+        product.designs.map(
+          (design) => ({
+            name:
+              design.name || "",
+            stock:
+              design.stock ?? "",
+            images: [],
+            existingImages:
+              Array.isArray(
+                design.images
+              )
+                ? design.images
+                : [],
+          })
+        )
+      );
+    } else {
+      setDesigns([]);
+    }
 
     window.scrollTo({
       top: 0,
@@ -322,26 +569,29 @@ console.log("================================");
   // DELETE PRODUCT
   // ======================================================
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this product?"
+      );
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/products/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            ...getAdminHeaders(),
-          },
-        }
-      );
+      const response =
+        await fetch(
+          `${API_URL}/api/products/${id}`,
+          {
+            method: "DELETE",
+            headers: {
+              ...getAdminHeaders(),
+            },
+          }
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -350,12 +600,18 @@ console.log("================================");
         );
       }
 
-      alert("Product deleted successfully!");
+      alert(
+        "Product deleted successfully!"
+      );
 
       await loadProducts();
     } catch (error) {
       console.error(error);
-      alert(error.message);
+
+      alert(
+        error.message ||
+          "Failed to delete product"
+      );
     }
   };
 
@@ -368,23 +624,26 @@ console.log("================================");
     showAlert = true
   ) => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/orders/${orderId}/status`,
-        {
-          method: "PUT",
+      const response =
+        await fetch(
+          `${API_URL}/api/orders/${orderId}/status`,
+          {
+            method: "PUT",
 
-          headers: {
-            "Content-Type": "application/json",
-            ...getAdminHeaders(),
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
+              ...getAdminHeaders(),
+            },
 
-          body: JSON.stringify({
-            status: newStatus,
-          }),
-        }
-      );
+            body: JSON.stringify({
+              status: newStatus,
+            }),
+          }
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -393,12 +652,14 @@ console.log("================================");
         );
       }
 
-      setOrders((currentOrders) =>
-        currentOrders.map((order) =>
-          order._id === orderId
-            ? data.order
-            : order
-        )
+      setOrders(
+        (currentOrders) =>
+          currentOrders.map(
+            (order) =>
+              order._id === orderId
+                ? data.order
+                : order
+          )
       );
 
       if (showAlert) {
@@ -428,15 +689,25 @@ console.log("================================");
   // ======================================================
   // BULK STATUS UPDATE
   // ======================================================
-  const handleBulkStatus = async (newStatus) => {
-    if (selectedOrders.length === 0) {
-      alert("Please select at least one order.");
+  const handleBulkStatus = async (
+    newStatus
+  ) => {
+    if (
+      selectedOrders.length === 0
+    ) {
+      alert(
+        "Please select at least one order."
+      );
       return;
     }
 
-    const confirmed = window.confirm(
-      `Change ${selectedOrders.length} selected order(s) to ${newStatus}?`
-    );
+    const selectedCount =
+      selectedOrders.length;
+
+    const confirmed =
+      window.confirm(
+        `Change ${selectedCount} selected order(s) to ${newStatus}?`
+      );
 
     if (!confirmed) {
       return;
@@ -455,75 +726,88 @@ console.log("================================");
     await loadOrders();
 
     alert(
-      `${selectedOrders.length} order(s) updated successfully.`
+      `${selectedCount} order(s) updated successfully.`
     );
   };
 
   // ======================================================
   // UPDATE RETURN / REPLACE STATUS
   // ======================================================
-  const handleReturnRequestStatus = async (
-    orderId,
-    newStatus
-  ) => {
-    try {
-      const response = await fetch(
-        `${API_URL}/api/orders/${orderId}/return-request-status`,
-        {
-          method: "PUT",
+  const handleReturnRequestStatus =
+    async (
+      orderId,
+      newStatus
+    ) => {
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/api/orders/${orderId}/return-request-status`,
+            {
+              method: "PUT",
 
-          headers: {
-            "Content-Type": "application/json",
-            ...getAdminHeaders(),
-          },
+              headers: {
+                "Content-Type":
+                  "application/json",
+                ...getAdminHeaders(),
+              },
 
-          body: JSON.stringify({
-            returnStatus: newStatus,
-          }),
+              body: JSON.stringify({
+                returnStatus:
+                  newStatus,
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to update request status"
+          );
         }
-      );
 
-      const data = await response.json();
+        setOrders(
+          (currentOrders) =>
+            currentOrders.map(
+              (order) =>
+                order._id === orderId
+                  ? data.order
+                  : order
+            )
+        );
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to update request status"
+        alert(
+          "Return/Replace request updated successfully!"
+        );
+      } catch (error) {
+        console.error(
+          "Return/Replace status error:",
+          error
+        );
+
+        alert(
+          error.message ||
+            "Failed to update request."
         );
       }
-
-      setOrders((currentOrders) =>
-        currentOrders.map((order) =>
-          order._id === orderId
-            ? data.order
-            : order
-        )
-      );
-
-      alert(
-        "Return/Replace request updated successfully!"
-      );
-    } catch (error) {
-      console.error(
-        "Return/Replace status error:",
-        error
-      );
-
-      alert(
-        error.message ||
-          "Failed to update request."
-      );
-    }
-  };
+    };
 
   // ======================================================
   // ADMIN LOGOUT
   // ======================================================
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminUser");
+    localStorage.removeItem(
+      "adminToken"
+    );
 
-    window.location.href = "/admin";
+    localStorage.removeItem(
+      "adminUser"
+    );
+
+    window.location.href =
+      "/admin";
   };
 
   // ======================================================
@@ -533,57 +817,70 @@ console.log("================================");
     orders.filter(
       (order) =>
         order.returnRequest &&
-        order.returnRequest !== "None"
+        order.returnRequest !==
+          "None"
     );
 
   const pendingReturnRequests =
     returnReplaceRequests.filter(
       (order) =>
-        order.returnStatus === "Requested"
+        order.returnStatus ===
+        "Requested"
     ).length;
 
   // ======================================================
   // ORDER COUNTS
   // ======================================================
-  const pendingOrders = orders.filter(
-    (order) => order.status === "Pending"
-  ).length;
+  const pendingOrders =
+    orders.filter(
+      (order) =>
+        order.status === "Pending"
+    ).length;
 
-  const confirmedOrders = orders.filter(
-    (order) => order.status === "Confirmed"
-  ).length;
+  const confirmedOrders =
+    orders.filter(
+      (order) =>
+        order.status === "Confirmed"
+    ).length;
 
-  const shippedOrders = orders.filter(
-    (order) => order.status === "Shipped"
-  ).length;
-
+  const shippedOrders =
+    orders.filter(
+      (order) =>
+        order.status === "Shipped"
+    ).length;
 
   // ======================================================
   // ORDER SEARCH + FILTER
   // ======================================================
-  const filteredOrders = orders.filter((order) => {
-    const search = orderSearch
-      .toLowerCase()
-      .trim();
+  const filteredOrders =
+    orders.filter((order) => {
+      const search =
+        orderSearch
+          .toLowerCase()
+          .trim();
 
-    const matchesSearch =
-      !search ||
-      order._id
-        ?.toLowerCase()
-        .includes(search) ||
-      order.customer?.name
-        ?.toLowerCase()
-        .includes(search) ||
-      order.customer?.mobile
-        ?.toLowerCase()
-        .includes(search);
+      const matchesSearch =
+        !search ||
+        order._id
+          ?.toLowerCase()
+          .includes(search) ||
+        order.customer?.name
+          ?.toLowerCase()
+          .includes(search) ||
+        order.customer?.mobile
+          ?.toLowerCase()
+          .includes(search);
 
-    const matchesFilter =
-      orderFilter === "All" ||
-      order.status === orderFilter;
+      const matchesFilter =
+        orderFilter === "All" ||
+        order.status ===
+          orderFilter;
 
-    return matchesSearch && matchesFilter;
-  });
+      return (
+        matchesSearch &&
+        matchesFilter
+      );
+    });
 
   // ======================================================
   // PAGINATION
@@ -591,56 +888,77 @@ console.log("================================");
   const totalPages = Math.max(
     1,
     Math.ceil(
-      filteredOrders.length / ordersPerPage
+      filteredOrders.length /
+        ordersPerPage
     )
   );
 
   const startIndex =
-    (currentPage - 1) * ordersPerPage;
+    (currentPage - 1) *
+    ordersPerPage;
 
-  const visibleOrders = filteredOrders.slice(
-    startIndex,
-    startIndex + ordersPerPage
-  );
+  const visibleOrders =
+    filteredOrders.slice(
+      startIndex,
+      startIndex +
+        ordersPerPage
+    );
 
   // ======================================================
   // SELECT ORDER
   // ======================================================
-  const toggleOrderSelection = (orderId) => {
-    setSelectedOrders((current) =>
-      current.includes(orderId)
-        ? current.filter(
-            (id) => id !== orderId
-          )
-        : [...current, orderId]
-    );
-  };
+  const toggleOrderSelection =
+    (orderId) => {
+      setSelectedOrders(
+        (current) =>
+          current.includes(orderId)
+            ? current.filter(
+                (id) =>
+                  id !== orderId
+              )
+            : [
+                ...current,
+                orderId,
+              ]
+      );
+    };
 
   // ======================================================
   // SELECT ALL VISIBLE ORDERS
   // ======================================================
   const toggleSelectAll = () => {
-    const visibleIds = visibleOrders.map(
-      (order) => order._id
-    );
+    const visibleIds =
+      visibleOrders.map(
+        (order) => order._id
+      );
 
-    const allSelected = visibleIds.every(
-      (id) => selectedOrders.includes(id)
-    );
+    const allSelected =
+      visibleIds.every(
+        (id) =>
+          selectedOrders.includes(
+            id
+          )
+      );
 
     if (allSelected) {
-      setSelectedOrders((current) =>
-        current.filter(
-          (id) => !visibleIds.includes(id)
-        )
+      setSelectedOrders(
+        (current) =>
+          current.filter(
+            (id) =>
+              !visibleIds.includes(
+                id
+              )
+          )
       );
     } else {
-      setSelectedOrders((current) => [
-        ...new Set([
-          ...current,
-          ...visibleIds,
-        ]),
-      ]);
+      setSelectedOrders(
+        (current) => [
+          ...new Set([
+            ...current,
+            ...visibleIds,
+          ]),
+        ]
+      );
     }
   };
 
@@ -670,7 +988,8 @@ console.log("================================");
 
               <button
                 onClick={() =>
-                  (window.location.href = "/")
+                  (window.location.href =
+                    "/")
                 }
                 className="border border-white text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-white hover:text-black"
               >
@@ -678,7 +997,9 @@ console.log("================================");
               </button>
 
               <button
-                onClick={handleLogout}
+                onClick={
+                  handleLogout
+                }
                 className="bg-white text-black px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200"
               >
                 Logout
@@ -692,7 +1013,9 @@ console.log("================================");
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-5">
 
-        {/* DASHBOARD */}
+        {/* ==================================================
+            DASHBOARD
+        ================================================== */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
 
           <div className="bg-white rounded-lg shadow-sm p-4">
@@ -757,7 +1080,9 @@ console.log("================================");
 
         </div>
 
-        {/* ADD / EDIT PRODUCT */}
+        {/* ==================================================
+            ADD / EDIT PRODUCT
+        ================================================== */}
         <section className="bg-white rounded-xl shadow-sm p-5 mb-8">
 
           <div className="flex justify-between items-center mb-5">
@@ -770,7 +1095,9 @@ console.log("================================");
 
             {editingId && (
               <button
-                onClick={resetForm}
+                onClick={
+                  resetForm
+                }
                 className="text-sm text-red-600 font-semibold"
               >
                 Cancel Edit
@@ -780,10 +1107,13 @@ console.log("================================");
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={
+              handleSubmit
+            }
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
 
+            {/* PRODUCT NAME */}
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Product Name
@@ -792,14 +1122,19 @@ console.log("================================");
               <input
                 type="text"
                 name="name"
-                value={formData.name}
-                onChange={handleChange}
+                value={
+                  formData.name
+                }
+                onChange={
+                  handleChange
+                }
                 required
                 placeholder="Example: Sports Shoes"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
               />
             </div>
 
+            {/* CATEGORY */}
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Category
@@ -807,29 +1142,65 @@ console.log("================================");
 
               <select
                 name="category"
-                value={formData.category}
-                onChange={handleChange}
+                value={
+                  formData.category
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none"
               >
-                <option value="Men">Men</option>
-                <option value="Women">Women</option>
-                <option value="Kids">Kids</option>
-                <option value="Sports">Sports</option>
-                <option value="Formal">Formal</option>
-                <option value="Casual">Casual</option>
-                <option value="Sandals">Sandals</option>
-                <option value="Slippers">Slippers</option>
+                <option value="Men">
+                  Men
+                </option>
+
+                <option value="Women">
+                  Women
+                </option>
+
+                <option value="Kids">
+                  Kids
+                </option>
+
+                <option value="Sports">
+                  Sports
+                </option>
+
+                <option value="Formal">
+                  Formal
+                </option>
+
+                <option value="Casual">
+                  Casual
+                </option>
+
+                <option value="Sandals">
+                  Sandals
+                </option>
+
+                <option value="Slippers">
+                  Slippers
+                </option>
+
                 <option value="School Shoes">
                   School Shoes
                 </option>
-                <option value="Boots">Boots</option>
-                <option value="Loafers">Loafers</option>
+
+                <option value="Boots">
+                  Boots
+                </option>
+
+                <option value="Loafers">
+                  Loafers
+                </option>
+
                 <option value="Flip Flops">
                   Flip Flops
                 </option>
               </select>
             </div>
 
+            {/* BRAND */}
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Brand
@@ -838,55 +1209,70 @@ console.log("================================");
               <input
                 type="text"
                 name="brand"
-                value={formData.brand}
-                onChange={handleChange}
+                value={
+                  formData.brand
+                }
+                onChange={
+                  handleChange
+                }
                 placeholder="Brand name"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
               />
             </div>
 
+            {/* MRP */}
             <div>
-  <label className="block text-sm font-semibold mb-1">
-    MRP (₹)
-  </label>
+              <label className="block text-sm font-semibold mb-1">
+                MRP (₹)
+              </label>
 
-  <input
-    type="number"
-    name="mrp"
-    value={formData.mrp}
-    onChange={handleChange}
-    required
-    min="0"
-    placeholder="2000"
-    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
-  />
+              <input
+                type="number"
+                name="mrp"
+                value={
+                  formData.mrp
+                }
+                onChange={
+                  handleChange
+                }
+                required
+                min="0"
+                placeholder="2000"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+              />
 
-  <p className="text-xs text-gray-500 mt-1">
-    Original Maximum Retail Price
-  </p>
-</div>
+              <p className="text-xs text-gray-500 mt-1">
+                Original Maximum Retail Price
+              </p>
+            </div>
 
-<div>
-  <label className="block text-sm font-semibold mb-1">
-    Selling Price (₹)
-  </label>
+            {/* SELLING PRICE */}
+            <div>
+              <label className="block text-sm font-semibold mb-1">
+                Selling Price (₹)
+              </label>
 
-  <input
-    type="number"
-    name="price"
-    value={formData.price}
-    onChange={handleChange}
-    required
-    min="0"
-    placeholder="1499"
-    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
-  />
+              <input
+                type="number"
+                name="price"
+                value={
+                  formData.price
+                }
+                onChange={
+                  handleChange
+                }
+                required
+                min="0"
+                placeholder="1499"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+              />
 
-  <p className="text-xs text-gray-500 mt-1">
-    Actual price customer will pay
-  </p>
-</div>
+              <p className="text-xs text-gray-500 mt-1">
+                Actual price customer will pay
+              </p>
+            </div>
 
+            {/* SIZES */}
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Sizes
@@ -895,8 +1281,12 @@ console.log("================================");
               <input
                 type="text"
                 name="sizes"
-                value={formData.sizes}
-                onChange={handleChange}
+                value={
+                  formData.sizes
+                }
+                onChange={
+                  handleChange
+                }
                 placeholder="6, 7, 8, 9, 10"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
               />
@@ -906,6 +1296,7 @@ console.log("================================");
               </p>
             </div>
 
+            {/* STOCK */}
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Stock
@@ -914,55 +1305,397 @@ console.log("================================");
               <input
                 type="number"
                 name="stock"
-                value={formData.stock}
-                onChange={handleChange}
+                value={
+                  formData.stock
+                }
+                onChange={
+                  handleChange
+                }
                 min="0"
                 placeholder="10"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
               />
+
+              <p className="text-xs text-gray-500 mt-1">
+                Main product stock
+              </p>
             </div>
 
+            {/* DESCRIPTION */}
             <div className="md:col-span-2">
+
               <label className="block text-sm font-semibold mb-1">
                 Description
               </label>
 
               <textarea
                 name="description"
-                value={formData.description}
-                onChange={handleChange}
+                value={
+                  formData.description
+                }
+                onChange={
+                  handleChange
+                }
                 rows="3"
                 placeholder="Product description"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
               />
+
             </div>
 
+            {/* MAIN IMAGE */}
             <div className="md:col-span-2">
+
               <label className="block text-sm font-semibold mb-1">
-                Product Image
+                Main Product Image
               </label>
 
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) =>
-                  setImage(e.target.files[0])
+                  setImage(
+                    e.target.files?.[0] ||
+                      null
+                  )
                 }
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
               />
 
               {editingId && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Leave empty to keep the existing
-                  image.
+                  Leave empty to keep the existing image.
                 </p>
               )}
+
             </div>
 
+            {/* ==================================================
+                DESIGNS SECTION
+            ================================================== */}
+            <div className="md:col-span-2 border-t pt-5 mt-2">
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+
+                <div>
+                  <h3 className="text-lg font-bold">
+                    Product Designs
+                  </h3>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Add different designs/colors. Each design can have multiple real photos and its own stock.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    addDesign
+                  }
+                  className="bg-black text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800"
+                >
+                  + Add Design
+                </button>
+
+              </div>
+
+              {designs.length ===
+              0 ? (
+                <div className="border border-dashed border-gray-300 rounded-lg p-5 text-center">
+
+                  <p className="text-sm text-gray-500">
+                    No designs added.
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-1">
+                    Example: Black, White, Blue, Red Design
+                  </p>
+
+                </div>
+              ) : (
+                <div className="space-y-5">
+
+                  {designs.map(
+                    (
+                      design,
+                      designIndex
+                    ) => (
+
+                      <div
+                        key={
+                          designIndex
+                        }
+                        className="border border-gray-300 rounded-xl p-4 bg-gray-50"
+                      >
+
+                        {/* DESIGN HEADER */}
+                        <div className="flex justify-between items-center mb-4">
+
+                          <div>
+                            <h4 className="font-bold">
+                              Design{" "}
+                              {designIndex +
+                                1}
+                            </h4>
+
+                            <p className="text-xs text-gray-500">
+                              Add design name, stock and photos
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeDesign(
+                                designIndex
+                              )
+                            }
+                            className="text-red-600 text-sm font-semibold hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+
+                        </div>
+
+                        {/* DESIGN NAME + STOCK */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                          <div>
+
+                            <label className="block text-sm font-semibold mb-1">
+                              Design Name
+                            </label>
+
+                            <input
+                              type="text"
+                              value={
+                                design.name
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                updateDesign(
+                                  designIndex,
+                                  "name",
+                                  e.target
+                                    .value
+                                )
+                              }
+                              placeholder="Example: Black"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+                            />
+
+                          </div>
+
+                          <div>
+
+                            <label className="block text-sm font-semibold mb-1">
+                              Design Stock
+                            </label>
+
+                            <input
+                              type="number"
+                              min="0"
+                              value={
+                                design.stock
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                updateDesign(
+                                  designIndex,
+                                  "stock",
+                                  e.target
+                                    .value
+                                )
+                              }
+                              placeholder="20"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+                            />
+
+                          </div>
+
+                        </div>
+
+                        {/* DESIGN IMAGES */}
+                        <div className="mt-4">
+
+                          <label className="block text-sm font-semibold mb-1">
+                            Design Photos
+                          </label>
+
+                          <p className="text-xs text-gray-500 mb-2">
+                            You can select multiple real product photos: front, side, back, sole, etc.
+                          </p>
+
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(
+                              e
+                            ) =>
+                              updateDesignImages(
+                                designIndex,
+                                e.target
+                                  .files
+                              )
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 bg-white"
+                          />
+
+                        </div>
+
+                        {/* EXISTING IMAGES */}
+                        {design
+                          .existingImages
+                          ?.length >
+                          0 && (
+                          <div className="mt-4">
+
+                            <p className="text-sm font-semibold mb-2">
+                              Existing Photos
+                            </p>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+                              {design.existingImages.map(
+                                (
+                                  imageUrl,
+                                  imageIndex
+                                ) => (
+
+                                  <div
+                                    key={
+                                      imageIndex
+                                    }
+                                    className="relative bg-white border rounded-lg overflow-hidden"
+                                  >
+
+                                    <img
+                                      src={
+                                        imageUrl
+                                      }
+                                      alt={`${design.name} ${imageIndex + 1}`}
+                                      className="w-full h-28 object-cover"
+                                    />
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeExistingDesignImage(
+                                          designIndex,
+                                          imageIndex
+                                        )
+                                      }
+                                      className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full text-xs font-bold"
+                                    >
+                                      ×
+                                    </button>
+
+                                  </div>
+
+                                )
+                              )}
+
+                            </div>
+
+                          </div>
+                        )}
+
+                        {/* NEW IMAGE PREVIEWS */}
+                        {design
+                          .images
+                          ?.length >
+                          0 && (
+                          <div className="mt-4">
+
+                            <p className="text-sm font-semibold mb-2">
+                              New Photos
+                            </p>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+                              {design.images.map(
+                                (
+                                  file,
+                                  imageIndex
+                                ) => (
+
+                                  <div
+                                    key={
+                                      imageIndex
+                                    }
+                                    className="bg-white border rounded-lg overflow-hidden"
+                                  >
+
+                                    <img
+                                      src={URL.createObjectURL(
+                                        file
+                                      )}
+                                      alt={`New design ${imageIndex + 1}`}
+                                      className="w-full h-28 object-cover"
+                                    />
+
+                                  </div>
+
+                                )
+                              )}
+
+                            </div>
+
+                          </div>
+                        )}
+
+                        {/* DESIGN SUMMARY */}
+                        <div className="mt-4 text-xs text-gray-500">
+
+                          <p>
+                            Photos selected:{" "}
+                            <strong>
+                              {design
+                                .images
+                                ?.length ||
+                                0}
+                            </strong>
+                          </p>
+
+                          {design
+                            .existingImages
+                            ?.length >
+                            0 && (
+                            <p>
+                              Existing photos:{" "}
+                              <strong>
+                                {
+                                  design
+                                    .existingImages
+                                    .length
+                                }
+                              </strong>
+                            </p>
+                          )}
+
+                        </div>
+
+                      </div>
+
+                    )
+                  )}
+
+                </div>
+              )}
+
+            </div>
+
+            {/* SUBMIT */}
             <div className="md:col-span-2">
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading
+                }
                 className="bg-black text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 disabled:opacity-50"
               >
                 {loading
@@ -971,12 +1704,16 @@ console.log("================================");
                   ? "Update Product"
                   : "Add Product"}
               </button>
+
             </div>
 
           </form>
+
         </section>
 
-        {/* PRODUCTS */}
+        {/* ==================================================
+            PRODUCTS
+        ================================================== */}
         <section className="mb-8">
 
           <div className="flex justify-between items-center mb-4">
@@ -991,7 +1728,8 @@ console.log("================================");
 
           </div>
 
-          {products.length === 0 ? (
+          {products.length ===
+          0 ? (
             <div className="bg-white rounded-xl p-8 text-center">
 
               <p className="text-gray-500">
@@ -1002,110 +1740,171 @@ console.log("================================");
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
 
-              {products.map((product) => (
+              {products.map(
+                (product) => (
 
-                <div
-                  key={product._id}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden"
-                >
+                  <div
+                    key={
+                      product._id
+                    }
+                    className="bg-white rounded-lg shadow-sm overflow-hidden"
+                  >
 
-                  <div className="h-40 bg-gray-100">
+                    <div className="h-40 bg-gray-100">
 
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                        No Image
-                      </div>
-                    )}
+                      {product.image ? (
+                        <img
+                          src={
+                            product.image
+                          }
+                          alt={
+                            product.name
+                          }
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                          No Image
+                        </div>
+                      )}
 
-                  </div>
+                    </div>
 
-                  <div className="p-3">
+                    <div className="p-3">
 
-                    <p className="text-xs text-gray-500">
-                      {product.category}
-                    </p>
-
-                    <h3 className="font-bold text-sm mt-1 line-clamp-2">
-                      {product.name}
-                    </h3>
-
-                    {product.brand && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {product.brand}
+                      <p className="text-xs text-gray-500">
+                        {
+                          product.category
+                        }
                       </p>
-                    )}
 
-                    {Number(product.mrp) > Number(product.price) ? (
-  <div className="mt-2">
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-500 line-through">
-        ₹{product.mrp}
-      </span>
-
-      <span className="text-xs font-semibold text-green-600">
-        {Math.round(
-          ((Number(product.mrp) - Number(product.price)) /
-            Number(product.mrp)) *
-            100
-        )}
-        % OFF
-      </span>
-    </div>
-
-    <p className="text-lg font-bold">
-      ₹{product.price}
-    </p>
-  </div>
-) : (
-  <p className="text-lg font-bold mt-2">
-    ₹{product.price}
-  </p>
-)}
-
-                    <p className="text-xs text-gray-500 mt-1">
-                      Stock: {product.stock}
-                    </p>
-
-                    <div className="flex gap-2 mt-3">
-
-                      <button
-                        onClick={() =>
-                          handleEdit(product)
+                      <h3 className="font-bold text-sm mt-1 line-clamp-2">
+                        {
+                          product.name
                         }
-                        className="flex-1 bg-gray-200 text-black py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-300"
-                      >
-                        Edit
-                      </button>
+                      </h3>
 
-                      <button
-                        onClick={() =>
-                          handleDelete(product._id)
+                      {product.brand && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {
+                            product.brand
+                          }
+                        </p>
+                      )}
+
+                      {Number(
+                        product.mrp
+                      ) >
+                      Number(
+                        product.price
+                      ) ? (
+                        <div className="mt-2">
+
+                          <div className="flex items-center gap-2">
+
+                            <span className="text-sm text-gray-500 line-through">
+                              ₹
+                              {
+                                product.mrp
+                              }
+                            </span>
+
+                            <span className="text-xs font-semibold text-green-600">
+                              {Math.round(
+                                ((Number(
+                                  product.mrp
+                                ) -
+                                  Number(
+                                    product.price
+                                  )) /
+                                  Number(
+                                    product.mrp
+                                  )) *
+                                  100
+                              )}
+                              % OFF
+                            </span>
+
+                          </div>
+
+                          <p className="text-lg font-bold">
+                            ₹
+                            {
+                              product.price
+                            }
+                          </p>
+
+                        </div>
+                      ) : (
+                        <p className="text-lg font-bold mt-2">
+                          ₹
+                          {
+                            product.price
+                          }
+                        </p>
+                      )}
+
+                      <p className="text-xs text-gray-500 mt-1">
+                        Stock:{" "}
+                        {
+                          product.stock
                         }
-                        className="flex-1 bg-red-600 text-white py-1.5 rounded-lg text-xs font-semibold hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
+                      </p>
+
+                      {product.designs
+                        ?.length >
+                        0 && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          {
+                            product
+                              .designs
+                              .length
+                          }{" "}
+                          design(s)
+                        </p>
+                      )}
+
+                      <div className="flex gap-2 mt-3">
+
+                        <button
+                          onClick={() =>
+                            handleEdit(
+                              product
+                            )
+                          }
+                          className="flex-1 bg-gray-200 text-black py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-300"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleDelete(
+                              product._id
+                            )
+                          }
+                          className="flex-1 bg-red-600 text-white py-1.5 rounded-lg text-xs font-semibold hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+
+                      </div>
 
                     </div>
 
                   </div>
 
-                </div>
-
-              ))}
+                )
+              )}
 
             </div>
           )}
 
         </section>
 
-        {/* RETURN / REPLACE REQUESTS */}
+        {/* ==================================================
+            RETURN / REPLACE REQUESTS
+        ================================================== */}
         <section className="mb-8">
 
           <div className="flex justify-between items-center mb-4">
@@ -1117,14 +1916,15 @@ console.log("================================");
               </h2>
 
               <p className="text-xs text-gray-500 mt-1">
-                Manage customer return and replacement
-                requests
+                Manage customer return and replacement requests
               </p>
 
             </div>
 
             <button
-              onClick={loadOrders}
+              onClick={
+                loadOrders
+              }
               className="bg-black text-white px-4 py-2 rounded-lg text-xs font-semibold"
             >
               Refresh
@@ -1132,7 +1932,8 @@ console.log("================================");
 
           </div>
 
-          {returnReplaceRequests.length === 0 ? (
+          {returnReplaceRequests.length ===
+          0 ? (
             <div className="bg-white rounded-xl p-8 text-center">
 
               <p className="text-gray-500">
@@ -1147,25 +1948,41 @@ console.log("================================");
                 (order) => (
 
                   <div
-                    key={order._id}
+                    key={
+                      order._id
+                    }
                     className="bg-white rounded-lg shadow-sm p-4"
                   >
 
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
                       <div>
+
                         <p className="text-xs text-gray-500">
-                          {order.returnRequest} • Order
+                          {
+                            order.returnRequest
+                          }{" "}
+                          • Order
                         </p>
 
                         <p className="font-semibold text-sm break-all">
-                          {order._id}
+                          {
+                            order._id
+                          }
                         </p>
 
                         <p className="text-xs text-gray-600 mt-1">
-                          {order.customer?.name} •{" "}
-                          {order.customer?.mobile}
+                          {
+                            order.customer
+                              ?.name
+                          }{" "}
+                          •{" "}
+                          {
+                            order.customer
+                              ?.mobile
+                          }
                         </p>
+
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -1179,10 +1996,13 @@ console.log("================================");
                             order.returnStatus ||
                             "Requested"
                           }
-                          onChange={(e) =>
+                          onChange={(
+                            e
+                          ) =>
                             handleReturnRequestStatus(
                               order._id,
-                              e.target.value
+                              e.target
+                                .value
                             )
                           }
                           className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm font-semibold outline-none"
@@ -1217,8 +2037,10 @@ console.log("================================");
                       </p>
 
                       <p className="text-sm mt-1">
-                        {order.returnReason ||
-                          "No reason provided"}
+                        {
+                          order.returnReason ||
+                          "No reason provided"
+                        }
                       </p>
 
                     </div>
@@ -1234,13 +2056,14 @@ console.log("================================");
         </section>
 
         {/* ==================================================
-            CUSTOMER ORDERS - COMPACT
+            CUSTOMER ORDERS
         ================================================== */}
         <section className="mb-10">
 
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
 
             <div>
+
               <h2 className="text-xl font-bold">
                 Customer Orders
               </h2>
@@ -1248,10 +2071,13 @@ console.log("================================");
               <p className="text-xs text-gray-500 mt-1">
                 Compact order management
               </p>
+
             </div>
 
             <button
-              onClick={loadOrders}
+              onClick={
+                loadOrders
+              }
               className="bg-black text-white px-4 py-2 rounded-lg text-xs font-semibold"
             >
               Refresh Orders
@@ -1266,21 +2092,30 @@ console.log("================================");
 
               <input
                 type="text"
-                value={orderSearch}
+                value={
+                  orderSearch
+                }
                 onChange={(e) =>
-                  setOrderSearch(e.target.value)
+                  setOrderSearch(
+                    e.target.value
+                  )
                 }
                 placeholder="Search order ID, customer name or mobile..."
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
               />
 
               <select
-                value={orderFilter}
+                value={
+                  orderFilter
+                }
                 onChange={(e) =>
-                  setOrderFilter(e.target.value)
+                  setOrderFilter(
+                    e.target.value
+                  )
                 }
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
               >
+
                 <option value="All">
                   All Orders
                 </option>
@@ -1304,6 +2139,7 @@ console.log("================================");
                 <option value="Cancelled">
                   Cancelled
                 </option>
+
               </select>
 
             </div>
@@ -1320,7 +2156,8 @@ console.log("================================");
                 <input
                   type="checkbox"
                   checked={
-                    visibleOrders.length > 0 &&
+                    visibleOrders.length >
+                      0 &&
                     visibleOrders.every(
                       (order) =>
                         selectedOrders.includes(
@@ -1328,7 +2165,9 @@ console.log("================================");
                         )
                     )
                   }
-                  onChange={toggleSelectAll}
+                  onChange={
+                    toggleSelectAll
+                  }
                   className="w-4 h-4"
                 />
 
@@ -1345,7 +2184,8 @@ console.log("================================");
                     )
                   }
                   disabled={
-                    selectedOrders.length === 0
+                    selectedOrders.length ===
+                    0
                   }
                   className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-40"
                 >
@@ -1359,7 +2199,8 @@ console.log("================================");
                     )
                   }
                   disabled={
-                    selectedOrders.length === 0
+                    selectedOrders.length ===
+                    0
                   }
                   className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-40"
                 >
@@ -1373,7 +2214,8 @@ console.log("================================");
                     )
                   }
                   disabled={
-                    selectedOrders.length === 0
+                    selectedOrders.length ===
+                    0
                   }
                   className="bg-green-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-40"
                 >
@@ -1387,7 +2229,8 @@ console.log("================================");
                     )
                   }
                   disabled={
-                    selectedOrders.length === 0
+                    selectedOrders.length ===
+                    0
                   }
                   className="bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-40"
                 >
@@ -1397,14 +2240,18 @@ console.log("================================");
               </div>
 
               <span className="text-xs text-gray-500">
-                {selectedOrders.length} selected
+                {
+                  selectedOrders.length
+                }{" "}
+                selected
               </span>
 
             </div>
 
           </div>
 
-          {orders.length === 0 ? (
+          {orders.length ===
+          0 ? (
             <div className="bg-white rounded-lg p-8 text-center">
 
               <p className="text-gray-500">
@@ -1412,7 +2259,8 @@ console.log("================================");
               </p>
 
             </div>
-          ) : filteredOrders.length === 0 ? (
+          ) : filteredOrders.length ===
+            0 ? (
             <div className="bg-white rounded-lg p-8 text-center">
 
               <p className="text-gray-500">
@@ -1472,7 +2320,9 @@ console.log("================================");
                         (order) => (
 
                           <tr
-                            key={order._id}
+                            key={
+                              order._id
+                            }
                             className="border-b last:border-b-0 hover:bg-gray-50"
                           >
 
@@ -1498,7 +2348,12 @@ console.log("================================");
                             <td className="px-3 py-3">
 
                               <p className="font-semibold text-xs">
-                                #{order._id.slice(-8)}
+                                #
+                                {
+                                  order._id.slice(
+                                    -8
+                                  )
+                                }
                               </p>
 
                               <p className="text-[11px] text-gray-500 mt-1">
@@ -1515,13 +2370,21 @@ console.log("================================");
                             <td className="px-3 py-3">
 
                               <p className="font-semibold text-xs">
-                                {order.customer?.name ||
-                                  "N/A"}
+                                {
+                                  order
+                                    .customer
+                                    ?.name ||
+                                  "N/A"
+                                }
                               </p>
 
                               <p className="text-[11px] text-gray-500 mt-1">
-                                {order.customer?.mobile ||
-                                  "N/A"}
+                                {
+                                  order
+                                    .customer
+                                    ?.mobile ||
+                                  "N/A"
+                                }
                               </p>
 
                             </td>
@@ -1530,11 +2393,18 @@ console.log("================================");
                             <td className="px-3 py-3">
 
                               <p className="font-bold text-sm">
-                                ₹{order.totalAmount}
+                                ₹
+                                {
+                                  order.totalAmount
+                                }
                               </p>
 
                               <p className="text-[11px] text-gray-500">
-                                {order.items?.length || 0}{" "}
+                                {
+                                  order.items
+                                    ?.length ||
+                                  0
+                                }{" "}
                                 item(s)
                               </p>
 
@@ -1551,8 +2421,10 @@ console.log("================================");
                                     : "bg-gray-100 text-gray-700"
                                 }`}
                               >
-                                {order.paymentStatus ||
-                                  "Pending"}
+                                {
+                                  order.paymentStatus ||
+                                  "Pending"
+                                }
                               </span>
 
                             </td>
@@ -1565,10 +2437,13 @@ console.log("================================");
                                   order.status ||
                                   "Pending"
                                 }
-                                onChange={(e) =>
+                                onChange={(
+                                  e
+                                ) =>
                                   handleStatusChange(
                                     order._id,
-                                    e.target.value
+                                    e.target
+                                      .value
                                   )
                                 }
                                 className="border border-gray-300 rounded-md px-2 py-1.5 text-xs font-semibold outline-none"
@@ -1652,13 +2527,25 @@ console.log("================================");
                             </h3>
 
                             <p className="text-xs">
-                              <strong>Name:</strong>{" "}
-                              {order.customer?.name}
+                              <strong>
+                                Name:
+                              </strong>{" "}
+                              {
+                                order
+                                  .customer
+                                  ?.name
+                              }
                             </p>
 
                             <p className="text-xs mt-1">
-                              <strong>Mobile:</strong>{" "}
-                              {order.customer?.mobile}
+                              <strong>
+                                Mobile:
+                              </strong>{" "}
+                              {
+                                order
+                                  .customer
+                                  ?.mobile
+                              }
                             </p>
 
                             <h3 className="font-bold text-sm mt-4 mb-2">
@@ -1666,13 +2553,31 @@ console.log("================================");
                             </h3>
 
                             <p className="text-xs">
-                              {order.customer?.address}
+                              {
+                                order
+                                  .customer
+                                  ?.address
+                              }
                             </p>
 
                             <p className="text-xs">
-                              {order.customer?.city},{" "}
-                              {order.customer?.state} -{" "}
-                              {order.customer?.pincode}
+                              {
+                                order
+                                  .customer
+                                  ?.city
+                              }
+                              ,{" "}
+                              {
+                                order
+                                  .customer
+                                  ?.state
+                              }{" "}
+                              -{" "}
+                              {
+                                order
+                                  .customer
+                                  ?.pincode
+                              }
                             </p>
 
                           </div>
@@ -1687,7 +2592,10 @@ console.log("================================");
                             <div className="space-y-2">
 
                               {order.items?.map(
-                                (item, index) => (
+                                (
+                                  item,
+                                  index
+                                ) => (
 
                                   <div
                                     key={`${order._id}-${index}`}
@@ -1698,8 +2606,12 @@ console.log("================================");
 
                                       {item.image ? (
                                         <img
-                                          src={item.image}
-                                          alt={item.name}
+                                          src={
+                                            item.image
+                                          }
+                                          alt={
+                                            item.name
+                                          }
                                           className="w-full h-full object-cover"
                                         />
                                       ) : (
@@ -1713,13 +2625,19 @@ console.log("================================");
                                     <div className="flex-1 min-w-0">
 
                                       <p className="font-semibold text-xs truncate">
-                                        {item.name}
+                                        {
+                                          item.name
+                                        }
                                       </p>
 
                                       <p className="text-[11px] text-gray-500">
                                         {item.size &&
                                           `Size ${item.size} • `}
-                                        Qty{" "}
+
+                                        {item.design &&
+                                          `Design ${item.design} • `}
+
+                                          Qty{" "}
                                         {item.quantity}
                                       </p>
 
@@ -1748,12 +2666,18 @@ console.log("================================");
                             </h3>
 
                             <p className="text-xs">
-                              <strong>Order ID:</strong>{" "}
-                              {order._id}
+                              <strong>
+                                Order ID:
+                              </strong>{" "}
+                              {
+                                order._id
+                              }
                             </p>
 
                             <p className="text-xs mt-1">
-                              <strong>Date:</strong>{" "}
+                              <strong>
+                                Date:
+                              </strong>{" "}
                               {order.createdAt
                                 ? new Date(
                                     order.createdAt
@@ -1762,20 +2686,32 @@ console.log("================================");
                             </p>
 
                             <p className="text-xs mt-1">
-                              <strong>Payment:</strong>{" "}
-                              {order.paymentMethod ||
-                                "Razorpay"}
+                              <strong>
+                                Payment:
+                              </strong>{" "}
+                              {
+                                order
+                                  .paymentMethod ||
+                                "Razorpay"
+                              }
                             </p>
 
                             <p className="text-xs mt-1">
-                              <strong>Payment Status:</strong>{" "}
-                              {order.paymentStatus ||
-                                "Pending"}
+                              <strong>
+                                Payment Status:
+                              </strong>{" "}
+                              {
+                                order
+                                  .paymentStatus ||
+                                "Pending"
+                              }
                             </p>
 
                             <p className="text-lg font-bold mt-3">
                               Total: ₹
-                              {order.totalAmount}
+                              {
+                                order.totalAmount
+                              }
                             </p>
 
                             {order.returnRequest &&
@@ -1800,8 +2736,10 @@ console.log("================================");
 
                                   <p className="text-[11px] text-gray-600 mt-1">
                                     Reason:{" "}
-                                    {order.returnReason ||
-                                      "Not provided"}
+                                    {
+                                      order.returnReason ||
+                                      "Not provided"
+                                    }
                                   </p>
 
                                 </div>
@@ -1822,21 +2760,34 @@ console.log("================================");
 
                 <p className="text-xs text-gray-500">
                   Showing{" "}
-                  {startIndex + 1}–
+                  {filteredOrders.length ===
+                  0
+                    ? 0
+                    : startIndex + 1}
+                  –
                   {Math.min(
-                    startIndex + ordersPerPage,
+                    startIndex +
+                      ordersPerPage,
                     filteredOrders.length
                   )}{" "}
-                  of {filteredOrders.length} orders
+                  of{" "}
+                  {
+                    filteredOrders.length
+                  }{" "}
+                  orders
                 </p>
 
                 <div className="flex items-center gap-1">
 
                   <button
-                    disabled={currentPage === 1}
+                    disabled={
+                      currentPage ===
+                      1
+                    }
                     onClick={() =>
                       setCurrentPage(
-                        (page) => page - 1
+                        (page) =>
+                          page - 1
                       )
                     }
                     className="border px-3 py-1.5 rounded-md text-xs disabled:opacity-40"
@@ -1845,16 +2796,24 @@ console.log("================================");
                   </button>
 
                   <span className="px-3 py-1.5 text-xs font-semibold">
-                    {currentPage} / {totalPages}
+                    {
+                      currentPage
+                    }{" "}
+                    /{" "}
+                    {
+                      totalPages
+                    }
                   </span>
 
                   <button
                     disabled={
-                      currentPage === totalPages
+                      currentPage ===
+                      totalPages
                     }
                     onClick={() =>
                       setCurrentPage(
-                        (page) => page + 1
+                        (page) =>
+                          page + 1
                       )
                     }
                     className="border px-3 py-1.5 rounded-md text-xs disabled:opacity-40"

@@ -76,13 +76,15 @@ function Home({ onLoginClick }) {
       const existingItem = currentCart.find(
         (item) =>
           item._id === product._id &&
-          item.selectedSize === product.selectedSize
+          item.selectedSize === product.selectedSize &&
+          item.selectedDesignId === product.selectedDesignId
       );
 
       if (existingItem) {
         return currentCart.map((item) =>
           item._id === product._id &&
-          item.selectedSize === product.selectedSize
+          item.selectedSize === product.selectedSize &&
+          item.selectedDesignId === product.selectedDesignId
             ? {
                 ...item,
                 quantity: item.quantity + 1,
@@ -106,24 +108,34 @@ function Home({ onLoginClick }) {
   };
 
   // REMOVE FROM CART
-  const handleRemove = (id, size) => {
+  const handleRemove = (
+    id,
+    size,
+    designId
+  ) => {
     setCart((currentCart) =>
       currentCart.filter(
         (item) =>
           !(
             item._id === id &&
-            item.selectedSize === size
+            item.selectedSize === size &&
+            item.selectedDesignId === designId
           )
       )
     );
   };
 
   // INCREASE QUANTITY
-  const handleIncrease = (id, size) => {
+  const handleIncrease = (
+    id,
+    size,
+    designId
+  ) => {
     setCart((currentCart) =>
       currentCart.map((item) =>
         item._id === id &&
-        item.selectedSize === size
+        item.selectedSize === size &&
+        item.selectedDesignId === designId
           ? {
               ...item,
               quantity: item.quantity + 1,
@@ -134,19 +146,26 @@ function Home({ onLoginClick }) {
   };
 
   // DECREASE QUANTITY
-  const handleDecrease = (id, size) => {
+  const handleDecrease = (
+    id,
+    size,
+    designId
+  ) => {
     setCart((currentCart) =>
       currentCart
         .map((item) =>
           item._id === id &&
-          item.selectedSize === size
+          item.selectedSize === size &&
+          item.selectedDesignId === designId
             ? {
                 ...item,
                 quantity: item.quantity - 1,
               }
             : item
         )
-        .filter((item) => item.quantity > 0)
+        .filter(
+          (item) => item.quantity > 0
+        )
     );
   };
 
@@ -622,6 +641,12 @@ useEffect(() => {
                                   </p>
                                 )}
 
+                                {item.design && (
+                                  <p className="text-sm text-gray-500">
+                                    Design: {item.design}
+                                   </p>
+                                )}
+
                                 <p className="text-sm text-gray-500">
                                   Quantity:{" "}
                                   {item.quantity}
@@ -1064,9 +1089,33 @@ useEffect(() => {
                     </p>
                   )}
 
-                  <p className="text-xl font-bold mt-3">
-                    ₹{product.price}
-                  </p>
+                  {Number(product.mrp) > Number(product.price) ? (
+  <div className="mt-3">
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-500 line-through">
+        ₹{product.mrp}
+      </span>
+
+      <span className="text-xs font-semibold text-green-600">
+        {Math.round(
+          ((Number(product.mrp) -
+            Number(product.price)) /
+            Number(product.mrp)) *
+            100
+        )}
+        % OFF
+      </span>
+    </div>
+
+    <p className="text-xl font-bold mt-1">
+      ₹{product.price}
+    </p>
+  </div>
+) : (
+  <p className="text-xl font-bold mt-3">
+    ₹{product.price}
+  </p>
+)}
 
                   {product.sizes &&
                     product.sizes.length > 0 && (

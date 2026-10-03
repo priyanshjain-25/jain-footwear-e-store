@@ -43,12 +43,22 @@ const orderSchema = new mongoose.Schema(
         size: {
           type: String,
           default: "",
-        },
+       },
+
+        design: {
+          type: String,
+          default: "",
+       },
+
+        designId: {
+          type: String,
+          default: "",
+       },
 
         image: {
           type: String,
           default: "",
-        },
+       },
       },
     ],
 

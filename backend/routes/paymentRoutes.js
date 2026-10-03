@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const razorpay = require("../config/razorpay");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
@@ -89,7 +90,8 @@ router.post("/verify-and-create-order", async (req, res) => {
       Number(totalAmount) <= 0
     ) {
       return res.status(400).json({
-        message: "Customer details and cart items are required",
+        message:
+          "Customer details and cart items are required",
       });
     }
 
@@ -140,11 +142,13 @@ router.post("/verify-and-create-order", async (req, res) => {
     }
 
     // ==================================================
-    // CHECK STOCK BEFORE CREATING ORDER
+    // CHECK STOCK
     // ==================================================
 
     for (const item of items) {
-      const product = await Product.findById(item.productId);
+      const product = await Product.findById(
+        item.productId
+      );
 
       if (!product) {
         return res.status(400).json({
@@ -155,18 +159,67 @@ router.post("/verify-and-create-order", async (req, res) => {
 
       const quantity = Number(item.quantity);
 
-      if (!Number.isInteger(quantity) || quantity <= 0) {
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+      ) {
         return res.status(400).json({
           message:
             `Invalid quantity for "${product.name}".`,
         });
       }
 
-      if (product.stock < quantity) {
-        return res.status(400).json({
-          message:
-            `Only ${product.stock} item(s) of "${product.name}" are available.`,
-        });
+      // ------------------------------------------------
+      // DESIGN-SPECIFIC STOCK
+      // ------------------------------------------------
+
+      if (item.designId) {
+        if (
+          !mongoose.Types.ObjectId.isValid(
+            item.designId
+          )
+        ) {
+          return res.status(400).json({
+            message:
+              `Invalid design selected for "${product.name}".`,
+          });
+        }
+
+        const selectedDesign =
+          product.designs.id(item.designId);
+
+        if (!selectedDesign) {
+          return res.status(400).json({
+            message:
+              `Selected design for "${product.name}" is no longer available.`,
+          });
+        }
+
+        if (
+          Number(selectedDesign.stock) <
+          quantity
+        ) {
+          return res.status(400).json({
+            message:
+              `Only ${selectedDesign.stock} item(s) of design "${selectedDesign.name}" are available.`,
+          });
+        }
+      }
+
+      // ------------------------------------------------
+      // NORMAL PRODUCT STOCK
+      // ------------------------------------------------
+
+      else {
+        if (
+          Number(product.stock) <
+          quantity
+        ) {
+          return res.status(400).json({
+            message:
+              `Only ${product.stock} item(s) of "${product.name}" are available.`,
+          });
+        }
       }
     }
 
@@ -177,27 +230,78 @@ router.post("/verify-and-create-order", async (req, res) => {
     for (const item of items) {
       const quantity = Number(item.quantity);
 
-      const updatedProduct =
-        await Product.findOneAndUpdate(
-          {
-            _id: item.productId,
-            stock: { $gte: quantity },
-          },
-          {
-            $inc: {
-              stock: -quantity,
-            },
-          },
-          {
-            new: true,
-          }
-        );
+      // ------------------------------------------------
+      // DESIGN-SPECIFIC STOCK
+      // ------------------------------------------------
 
-      if (!updatedProduct) {
-        return res.status(400).json({
-          message:
-            `Stock changed while processing "${item.name}". Please try again.`,
-        });
+      if (item.designId) {
+        if (
+          !mongoose.Types.ObjectId.isValid(
+            item.designId
+          )
+        ) {
+          return res.status(400).json({
+            message:
+              `Invalid design selected for "${item.name}".`,
+          });
+        }
+
+        const updatedProduct =
+          await Product.findOneAndUpdate(
+            {
+              _id: item.productId,
+              "designs._id": item.designId,
+              "designs.stock": {
+                $gte: quantity,
+              },
+            },
+            {
+              $inc: {
+                "designs.$.stock": -quantity,
+              },
+            },
+            {
+              new: true,
+            }
+          );
+
+        if (!updatedProduct) {
+          return res.status(400).json({
+            message:
+              `Stock changed while processing design "${item.design}". Please try again.`,
+          });
+        }
+      }
+
+      // ------------------------------------------------
+      // NORMAL PRODUCT STOCK
+      // ------------------------------------------------
+
+      else {
+        const updatedProduct =
+          await Product.findOneAndUpdate(
+            {
+              _id: item.productId,
+              stock: {
+                $gte: quantity,
+              },
+            },
+            {
+              $inc: {
+                stock: -quantity,
+              },
+            },
+            {
+              new: true,
+            }
+          );
+
+        if (!updatedProduct) {
+          return res.status(400).json({
+            message:
+              `Stock changed while processing "${item.name}". Please try again.`,
+          });
+        }
       }
     }
 
@@ -205,12 +309,30 @@ router.post("/verify-and-create-order", async (req, res) => {
     // PAYMENT VERIFIED → CREATE ORDER
     // ==================================================
 
+    const orderItems = items.map((item) => ({
+      productId: item.productId,
+
+      name: item.name,
+
+      price: Number(item.price),
+
+      quantity: Number(item.quantity),
+
+      size: item.size || "",
+
+      design: item.design || "",
+
+      designId: item.designId || "",
+
+      image: item.image || "",
+    }));
+
     const order = new Order({
       userId: userId || null,
 
       customer,
 
-      items,
+      items: orderItems,
 
       totalAmount: Number(totalAmount),
 
@@ -218,11 +340,14 @@ router.post("/verify-and-create-order", async (req, res) => {
 
       paymentStatus: "Paid",
 
-      razorpayOrderId: razorpay_order_id,
+      razorpayOrderId:
+        razorpay_order_id,
 
-      razorpayPaymentId: razorpay_payment_id,
+      razorpayPaymentId:
+        razorpay_payment_id,
 
-      razorpaySignature: razorpay_signature,
+      razorpaySignature:
+        razorpay_signature,
 
       returnRequest: "None",
 
@@ -233,7 +358,8 @@ router.post("/verify-and-create-order", async (req, res) => {
       status: "Pending",
     });
 
-    const savedOrder = await order.save();
+    const savedOrder =
+      await order.save();
 
     // ==================================================
     // SUCCESS
@@ -254,7 +380,9 @@ router.post("/verify-and-create-order", async (req, res) => {
     );
 
     res.status(500).json({
-      message: "Payment verification failed",
+      message:
+        "Payment verification failed",
+
       error: error.message,
     });
   }
@@ -263,153 +391,205 @@ router.post("/verify-and-create-order", async (req, res) => {
 // ======================================================
 // CREATE RAZORPAY REFUND
 // ======================================================
+
 // Admin only.
 // MongoDB is changed to "Refunded" ONLY after Razorpay
 // successfully accepts the refund request.
-// ======================================================
 
-router.post("/refund", adminAuth, async (req, res) => {
-  try {
-    const { orderId, amount } = req.body;
+router.post(
+  "/refund",
+  adminAuth,
+  async (req, res) => {
+    try {
+      const {
+        orderId,
+        amount,
+      } = req.body;
 
-    if (!orderId) {
-      return res.status(400).json({
-        message: "Order ID is required",
-      });
-    }
+      if (!orderId) {
+        return res.status(400).json({
+          message:
+            "Order ID is required",
+        });
+      }
 
-    const order = await Order.findById(orderId);
+      const order =
+        await Order.findById(orderId);
 
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
+      if (!order) {
+        return res.status(404).json({
+          message:
+            "Order not found",
+        });
+      }
 
-    if (order.paymentStatus !== "Paid") {
-      return res.status(400).json({
-        message:
-          "Refund can only be created for a paid order.",
-      });
-    }
+      if (
+        order.paymentStatus !==
+        "Paid"
+      ) {
+        return res.status(400).json({
+          message:
+            "Refund can only be created for a paid order.",
+        });
+      }
 
-    if (!order.razorpayPaymentId) {
-      return res.status(400).json({
-        message:
-          "Razorpay payment ID is missing for this order.",
-      });
-    }
+      if (
+        !order.razorpayPaymentId
+      ) {
+        return res.status(400).json({
+          message:
+            "Razorpay payment ID is missing for this order.",
+        });
+      }
 
-    const refundAmount = amount
-      ? Math.round(Number(amount) * 100)
-      : Math.round(Number(order.totalAmount) * 100);
+      const refundAmount = amount
+        ? Math.round(
+            Number(amount) * 100
+          )
+        : Math.round(
+            Number(order.totalAmount) *
+              100
+          );
 
-    if (
-      !Number.isFinite(refundAmount) ||
-      refundAmount <= 0
-    ) {
-      return res.status(400).json({
-        message:
-          "Valid refund amount is required.",
-      });
-    }
+      if (
+        !Number.isFinite(
+          refundAmount
+        ) ||
+        refundAmount <= 0
+      ) {
+        return res.status(400).json({
+          message:
+            "Valid refund amount is required.",
+        });
+      }
 
-    const orderAmountInPaise =
-      Math.round(Number(order.totalAmount) * 100);
+      const orderAmountInPaise =
+        Math.round(
+          Number(order.totalAmount) *
+            100
+        );
 
-    if (refundAmount > orderAmountInPaise) {
-      return res.status(400).json({
-        message:
-          "Refund amount cannot be greater than order amount.",
-      });
-    }
+      if (
+        refundAmount >
+        orderAmountInPaise
+      ) {
+        return res.status(400).json({
+          message:
+            "Refund amount cannot be greater than order amount.",
+        });
+      }
 
-    console.log("Refund request:", {
-      orderId: order._id.toString(),
-      razorpayPaymentId:
-        order.razorpayPaymentId,
-      refundAmount,
-    });
-
-    const refund =
-      await razorpay.payments.refund(
-        order.razorpayPaymentId,
+      console.log(
+        "Refund request:",
         {
-          amount: refundAmount,
-          speed: "normal",
-          notes: {
-            orderId: order._id.toString(),
-            reason: "Customer refund",
-          },
+          orderId:
+            order._id.toString(),
+
+          razorpayPaymentId:
+            order.razorpayPaymentId,
+
+          refundAmount,
         }
       );
 
-    console.log(
-      "Razorpay refund response:",
-      refund
-    );
+      const refund =
+        await razorpay.payments.refund(
+          order.razorpayPaymentId,
+          {
+            amount: refundAmount,
 
-    order.paymentStatus = "Refunded";
+            speed: "normal",
 
-    if (order.status !== "Delivered") {
-      order.status = "Cancelled";
-    }
+            notes: {
+              orderId:
+                order._id.toString(),
 
-    const updatedOrder =
-      await order.save();
+              reason:
+                "Customer refund",
+            },
+          }
+        );
 
-    return res.status(200).json({
-      message:
-        "Refund initiated successfully",
+      console.log(
+        "Razorpay refund response:",
+        refund
+      );
 
-      success: true,
+      order.paymentStatus =
+        "Refunded";
 
-      refund: {
-        id: refund.id,
-        amount: refund.amount,
-        currency: refund.currency,
-        status: refund.status,
-      },
-
-      order: updatedOrder,
-    });
-  } catch (error) {
-    console.error(
-      "Razorpay refund error:",
-      {
-        message: error.message,
-
-        statusCode:
-          error.statusCode,
-
-        code:
-          error.error?.code,
-
-        description:
-          error.error?.description,
-
-        reason:
-          error.error?.reason,
-
-        source:
-          error.error?.source,
-
-        step:
-          error.error?.step,
+      if (
+        order.status !==
+        "Delivered"
+      ) {
+        order.status =
+          "Cancelled";
       }
-    );
 
-    return res.status(500).json({
-      message: "Refund failed",
+      const updatedOrder =
+        await order.save();
 
-      success: false,
+      return res.status(200).json({
+        message:
+          "Refund initiated successfully",
 
-      error:
-        error.error?.description ||
-        error.message,
-    });
+        success: true,
+
+        refund: {
+          id: refund.id,
+
+          amount:
+            refund.amount,
+
+          currency:
+            refund.currency,
+
+          status:
+            refund.status,
+        },
+
+        order: updatedOrder,
+      });
+    } catch (error) {
+      console.error(
+        "Razorpay refund error:",
+        {
+          message:
+            error.message,
+
+          statusCode:
+            error.statusCode,
+
+          code:
+            error.error?.code,
+
+          description:
+            error.error?.description,
+
+          reason:
+            error.error?.reason,
+
+          source:
+            error.error?.source,
+
+          step:
+            error.error?.step,
+        }
+      );
+
+      return res.status(500).json({
+        message:
+          "Refund failed",
+
+        success: false,
+
+        error:
+          error.error?.description ||
+          error.message,
+      });
+    }
   }
-});
+);
 
 // ======================================================
 // EXPORT ROUTER

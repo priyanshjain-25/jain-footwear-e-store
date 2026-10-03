@@ -1,5 +1,29 @@
 const mongoose = require("mongoose");
 
+const designSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    images: {
+      type: [String],
+      default: [],
+    },
+
+    stock: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    _id: true,
+  }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -45,11 +69,19 @@ const productSchema = new mongoose.Schema(
     stock: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
+    // Existing main image
     image: {
       type: String,
       default: "",
+    },
+
+    // Multiple designs / variants
+    designs: {
+      type: [designSchema],
+      default: [],
     },
   },
   {

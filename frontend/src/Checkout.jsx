@@ -148,13 +148,18 @@ function Checkout({ cart, onBack, onOrderPlaced }) {
                   customer: form,
 
                   items: cart.map((item) => ({
-                    productId: item._id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    size: item.selectedSize || "",
-                    image: item.image || "",
-                  })),
+                  productId: item._id,
+                  name: item.name,
+                  price: item.price,
+                  quantity: item.quantity,
+                  size: item.selectedSize || "",
+                  design: item.selectedDesign || "",
+                  designId: item.selectedDesignId || "",
+                  image:
+                    item.selectedImage ||
+                    item.image ||
+                    "",
+                 })),
 
                   totalAmount,
                 }),

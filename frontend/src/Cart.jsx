@@ -51,11 +51,14 @@ function Cart({
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item) => (
                 <div
-                  key={`${item._id}-${item.selectedSize}`}
+                  key={`${item._id}-${item.selectedDesignId || item.selectedDesign}-${item.selectedSize}`}
                   className="bg-white rounded-xl shadow-sm p-5 flex flex-col sm:flex-row gap-5"
                 >
                   <img
-                    src={item.image}
+                    src={
+                      item.selectedImage ||
+                      item.image
+                    }
                     alt={item.name}
                     className="w-full sm:w-32 h-32 object-cover rounded-lg"
                   />
@@ -71,8 +74,14 @@ function Cart({
                       </p>
                     )}
 
-                    {item.selectedSize && (
+                    {item.selectedDesign && (
                       <p className="text-sm text-gray-500 mt-2">
+                        Design: {item.selectedDesign}
+                      </p>
+                    )}
+
+                    {item.selectedSize && (
+                      <p className="text-sm text-gray-500 mt-1">
                         Size: {item.selectedSize}
                       </p>
                     )}
@@ -86,7 +95,8 @@ function Cart({
                         onClick={() =>
                           onDecrease(
                             item._id,
-                            item.selectedSize
+                            item.selectedSize,
+                            item.selectedDesignId
                           )
                         }
                         className="w-9 h-9 border rounded-lg font-bold"
@@ -102,7 +112,8 @@ function Cart({
                         onClick={() =>
                           onIncrease(
                             item._id,
-                            item.selectedSize
+                            item.selectedSize,
+                            item.selectedDesignId
                           )
                         }
                         className="w-9 h-9 border rounded-lg font-bold"
@@ -121,7 +132,8 @@ function Cart({
                       onClick={() =>
                         onRemove(
                           item._id,
-                          item.selectedSize
+                          item.selectedSize,
+                          item.selectedDesignId
                         )
                       }
                       className="text-red-600 text-sm font-semibold hover:underline"
