@@ -643,8 +643,8 @@ useEffect(() => {
 
                                 {item.design && (
                                   <p className="text-sm text-gray-500">
-                                    Design: {item.design}
-                                   </p>
+                                     Design: {item.design}
+                                  </p>
                                 )}
 
                                 <p className="text-sm text-gray-500">

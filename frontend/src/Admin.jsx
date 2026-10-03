@@ -210,6 +210,7 @@ function Admin() {
       ...previousDesigns,
       {
         name: "",
+        price: "",
         stock: "",
         images: [],
         existingImages: [],
@@ -371,16 +372,19 @@ function Admin() {
       // DESIGNS
       // --------------------------------------------------
       const designsForBackend =
-        designs.map((design) => ({
-          name: design.name,
-          stock: Number(
-            design.stock || 0
-          ),
-          existingImages:
-            design.existingImages || [],
-          imageCount:
-            design.images?.length || 0,
-        }));
+  designs.map((design) => ({
+    name: design.name,
+    price: Number(
+      design.price || formData.price || 0
+    ),
+    stock: Number(
+      design.stock || 0
+    ),
+    existingImages:
+      design.existingImages || [],
+    imageCount:
+      design.images?.length || 0,
+  }));
 
       if (designs.length > 0) {
         data.append(
@@ -539,22 +543,24 @@ function Admin() {
       Array.isArray(product.designs)
     ) {
       setDesigns(
-        product.designs.map(
-          (design) => ({
-            name:
-              design.name || "",
-            stock:
-              design.stock ?? "",
-            images: [],
-            existingImages:
-              Array.isArray(
-                design.images
-              )
-                ? design.images
-                : [],
-          })
+  product.designs.map(
+    (design) => ({
+      name:
+        design.name || "",
+      price:
+        design.price ?? product.price ?? "",
+      stock:
+        design.stock ?? "",
+      images: [],
+      existingImages:
+        Array.isArray(
+          design.images
         )
-      );
+          ? design.images
+          : [],
+    })
+  )
+);
     } else {
       setDesigns([]);
     }
@@ -1457,8 +1463,8 @@ function Admin() {
 
                         </div>
 
-                        {/* DESIGN NAME + STOCK */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* DESIGN NAME + PRICE + STOCK */}
+                        <div className="grid grid-cols-1 md:grid-cols-3s gap-4">
 
                           <div>
 
@@ -1486,6 +1492,34 @@ function Admin() {
                             />
 
                           </div>
+
+                          {/* Design Price */}
+  <div>
+    <label className="block text-sm font-semibold mb-1">
+      Design Price (₹)
+    </label>
+
+    <input
+      type="number"
+      min="0"
+      value={design.price}
+      onChange={(e) =>
+        updateDesign(
+          designIndex,
+          "price",
+          e.target.value
+        )
+      }
+      placeholder="549"
+      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-black"
+    />
+
+    <p className="text-xs text-gray-500 mt-1">
+      Price for this design/color
+    </p>
+  </div>
+
+  {/* Design Stock */}
 
                           <div>
 

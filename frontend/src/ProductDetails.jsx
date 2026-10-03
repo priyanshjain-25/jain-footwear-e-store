@@ -2,7 +2,7 @@ import { useState } from "react";
 
 function ProductDetails({ product, onBack, onAddToCart }) {
   const [selectedSize, setSelectedSize] = useState("");
-  const [selectedDesignIndex, setSelectedDesignIndex] = useState(0);
+  const [selectedDesignIndex, setSelectedDesignIndex] = useState(-1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (!product) {
@@ -13,46 +13,31 @@ function ProductDetails({ product, onBack, onAddToCart }) {
     );
   }
 
-  const designs = Array.isArray(product.designs)
-    ? product.designs
-    : [];
-
+  // Original product is always the first option
   const selectedDesign =
-    designs.length > 0
-      ? designs[selectedDesignIndex]
+    selectedDesignIndex >= 0
+      ? product.designs?.[selectedDesignIndex]
       : null;
 
-  let productImages = [];
+  const currentImages =
+    selectedDesign?.images?.length > 0
+      ? selectedDesign.images
+      : [product.image].filter(Boolean);
 
-  if (
-    selectedDesign &&
-    Array.isArray(selectedDesign.images) &&
-    selectedDesign.images.length > 0
-  ) {
-    productImages = selectedDesign.images;
-  } else if (product.image) {
-    productImages = [product.image];
-  }
+  const currentImage = currentImages[selectedImageIndex] || product.image;
 
-  const selectedImage =
-    productImages[selectedImageIndex] ||
-    productImages[0] ||
-    product.image ||
-    "";
+  const currentPrice =
+  selectedDesignIndex >= 0
+    ? Number(
+        selectedDesign?.price ??
+          product.price
+      )
+    : Number(product.price);
 
   const currentStock =
-    selectedDesign &&
-    selectedDesign.stock !== undefined
-      ? Number(selectedDesign.stock)
+    selectedDesignIndex >= 0
+      ? Number(selectedDesign?.stock || 0)
       : Number(product.stock || 0);
-
-  const mrp = Number(product.mrp || 0);
-  const price = Number(product.price || 0);
-
-  const discount =
-    mrp > price && mrp > 0
-      ? Math.round(((mrp - price) / mrp) * 100)
-      : 0;
 
   const handleDesignChange = (index) => {
     setSelectedDesignIndex(index);
@@ -60,36 +45,43 @@ function ProductDetails({ product, onBack, onAddToCart }) {
   };
 
   const handleAddToCart = () => {
-    if (
-      product.sizes &&
-      product.sizes.length > 0 &&
-      !selectedSize
-    ) {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       alert("Please select a size.");
-      return;
-    }
-
-    if (currentStock <= 0) {
-      alert("This product is out of stock.");
       return;
     }
 
     onAddToCart({
       ...product,
-      selectedDesign: selectedDesign?.name || "",
-      selectedDesignId: selectedDesign?._id || "",
+      price: currentPrice,
+      selectedDesign:
+        selectedDesignIndex >= 0
+          ? selectedDesign?.name || ""
+          : "Original",
+      selectedDesignId:
+        selectedDesignIndex >= 0
+          ? selectedDesign?._id || ""
+          : "",
       selectedSize,
-      selectedImage: selectedImage || product.image || "",
+      selectedImage: currentImage || product.image || "",
       quantity: 1,
     });
   };
 
+  const discount =
+  Number(product.mrp) > currentPrice
+    ? Math.round(
+        ((Number(product.mrp) - currentPrice) /
+          Number(product.mrp)) *
+          100
+      )
+    : 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* HEADER */}
+      {/* Header */}
       <header className="bg-black text-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-5 flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl font-bold">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">
             Jain Footwear
           </h1>
 
@@ -102,38 +94,34 @@ function ProductDetails({ product, onBack, onAddToCart }) {
         </div>
       </header>
 
-      {/* MAIN */}
-      <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      {/* Product Details */}
+      <main className="max-w-6xl mx-auto px-6 py-12">
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2">
-
-            {/* IMAGE SECTION */}
-            <div className="bg-gray-100 p-4 md:p-6">
-              <div className="bg-white rounded-xl overflow-hidden">
-                {selectedImage ? (
+            {/* Images */}
+            <div className="bg-gray-100 p-4">
+              <div className="min-h-[450px]">
+                {currentImage ? (
                   <img
-                    src={selectedImage}
+                    src={currentImage}
                     alt={product.name}
-                    className="w-full h-[350px] md:h-[500px] object-contain"
+                    className="w-full h-[450px] object-cover rounded-xl"
                   />
                 ) : (
-                  <div className="w-full h-[350px] md:h-[500px] flex items-center justify-center text-gray-400">
+                  <div className="w-full h-[450px] flex items-center justify-center text-gray-400">
                     No Image
                   </div>
                 )}
               </div>
 
-              {/* IMAGE THUMBNAILS */}
-              {productImages.length > 1 && (
-                <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
-                  {productImages.map((image, index) => (
+              {/* Image thumbnails */}
+              {currentImages.length > 1 && (
+                <div className="flex gap-3 mt-4 overflow-x-auto">
+                  {currentImages.map((image, index) => (
                     <button
                       key={`${image}-${index}`}
-                      type="button"
-                      onClick={() =>
-                        setSelectedImageIndex(index)
-                      }
-                      className={`w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 ${
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`flex-shrink-0 rounded-lg overflow-hidden border-2 ${
                         selectedImageIndex === index
                           ? "border-black"
                           : "border-gray-200"
@@ -142,7 +130,7 @@ function ProductDetails({ product, onBack, onAddToCart }) {
                       <img
                         src={image}
                         alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-20 h-20 object-cover"
                       />
                     </button>
                   ))}
@@ -150,13 +138,13 @@ function ProductDetails({ product, onBack, onAddToCart }) {
               )}
             </div>
 
-            {/* PRODUCT INFORMATION */}
-            <div className="p-6 md:p-10">
+            {/* Information */}
+            <div className="p-8 md:p-10">
               <p className="text-sm text-gray-500">
                 {product.category}
               </p>
 
-              <h2 className="text-2xl md:text-3xl font-bold mt-2">
+              <h2 className="text-3xl font-bold mt-2">
                 {product.name}
               </h2>
 
@@ -166,93 +154,171 @@ function ProductDetails({ product, onBack, onAddToCart }) {
                 </p>
               )}
 
-              {/* PRICE */}
-              <div className="mt-6">
-                {discount > 0 ? (
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg text-gray-500 line-through">
-                        ₹{mrp}
-                      </span>
+              {/* Price */}
+              {discount > 0 ? (
+                <div className="mt-6">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg text-gray-500 line-through">
+                      ₹{product.mrp}
+                    </span>
 
-                      <span className="text-sm font-bold text-green-600">
-                        {discount}% OFF
-                      </span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {discount}% OFF
+                    </span>
+                  </div>
+
+                  <p className="text-3xl font-bold mt-1">
+                    ₹{currentPrice}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold mt-6">
+                  ₹{currentPrice}
+                </p>
+              )}
+
+              {/* Available Designs */}
+              <div className="mt-8">
+                <h3 className="font-semibold text-lg mb-4">
+                  Available Designs
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {/* ORIGINAL - ALWAYS FIRST */}
+                  <button
+                    onClick={() => handleDesignChange(-1)}
+                    className={`text-left rounded-xl border-2 overflow-hidden ${
+                      selectedDesignIndex === -1
+                        ? "border-black"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="relative">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt="Original"
+                          className="w-full h-32 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400">
+                          No Image
+                        </div>
+                      )}
+
+                      {selectedDesignIndex === -1 && (
+                        <span className="absolute top-2 right-2 bg-black text-white text-xs px-2 py-1 rounded-full">
+                          Selected
+                        </span>
+                      )}
                     </div>
 
-                    <p className="text-3xl font-bold mt-1">
-                      ₹{price}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-3xl font-bold">
-                    ₹{price}
-                  </p>
-                )}
+                    <div className="p-3">
+                      <p className="font-semibold">
+                        Original
+                      </p>
+
+                      <p className="text-xs text-gray-500 mt-1">
+                        Original Product
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* ADDED DESIGNS */}
+                  {product.designs?.map((design, index) => {
+                    const firstImage =
+                      design.images?.[0] || product.image;
+
+                    const isSelected =
+                      selectedDesignIndex === index;
+
+                    return (
+                      <button
+                        key={design._id || index}
+                        onClick={() => handleDesignChange(index)}
+                        className={`text-left rounded-xl border-2 overflow-hidden ${
+                          isSelected
+                            ? "border-black"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <div className="relative">
+                          {firstImage ? (
+                            <img
+                              src={firstImage}
+                              alt={design.name}
+                              className="w-full h-32 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400">
+                              No Image
+                            </div>
+                          )}
+
+                          {isSelected && (
+                            <span className="absolute top-2 right-2 bg-black text-white text-xs px-2 py-1 rounded-full">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="p-3">
+                          <p className="font-semibold">
+                            {design.name}
+                          </p>
+
+                          <p className="text-xs text-gray-500 mt-1">
+                            {Number(design.stock || 0) > 0
+                              ? `${design.stock} available`
+                              : "Out of Stock"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* DESIGNS */}
-              {designs.length > 0 && (
-                <div className="mt-7">
+              {/* Description */}
+              {product.description && (
+                <div className="mt-8">
+                  <h3 className="font-semibold text-lg">
+                    Description
+                  </h3>
+
+                  <p className="text-gray-600 mt-2 leading-relaxed">
+                    {product.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Sizes */}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="mt-6">
                   <h3 className="font-semibold mb-3">
-                    Select Design
+                    Select Size
                   </h3>
 
                   <div className="flex flex-wrap gap-3">
-                    {designs.map((design, index) => (
+                    {product.sizes.map((size) => (
                       <button
-                        key={
-                          design._id ||
-                          `${design.name}-${index}`
-                        }
-                        type="button"
-                        onClick={() =>
-                          handleDesignChange(index)
-                        }
-                        className={`px-4 py-2.5 rounded-lg border font-medium ${
-                          selectedDesignIndex === index
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-5 py-3 rounded-lg border font-medium ${
+                          selectedSize === size
                             ? "bg-black text-white border-black"
                             : "bg-white text-black border-gray-300 hover:border-black"
                         }`}
                       >
-                        {design.name}
+                        {size}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* SIZES */}
-              {product.sizes &&
-                product.sizes.length > 0 && (
-                  <div className="mt-7">
-                    <h3 className="font-semibold mb-3">
-                      Select Size
-                    </h3>
-
-                    <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() =>
-                            setSelectedSize(size)
-                          }
-                          className={`min-w-[52px] px-4 py-2.5 rounded-lg border font-medium ${
-                            selectedSize === size
-                              ? "bg-black text-white border-black"
-                              : "bg-white text-black border-gray-300 hover:border-black"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {/* STOCK */}
-              <div className="mt-7">
+              {/* Stock */}
+              <div className="mt-6">
                 {currentStock > 0 ? (
                   <p className="text-green-600 font-medium">
                     In Stock ({currentStock} available)
@@ -264,22 +330,8 @@ function ProductDetails({ product, onBack, onAddToCart }) {
                 )}
               </div>
 
-              {/* DESCRIPTION */}
-              {product.description && (
-                <div className="mt-7">
-                  <h3 className="font-semibold text-lg">
-                    Description
-                  </h3>
-
-                  <p className="text-gray-600 mt-2 leading-relaxed">
-                    {product.description}
-                  </p>
-                </div>
-              )}
-
-              {/* ADD TO CART */}
+              {/* Add to Cart */}
               <button
-                type="button"
                 onClick={handleAddToCart}
                 disabled={currentStock <= 0}
                 className="w-full mt-8 bg-black text-white py-4 rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -293,10 +345,12 @@ function ProductDetails({ product, onBack, onAddToCart }) {
         </div>
       </main>
 
-      {/* FOOTER */}
+      {/* Footer */}
       <footer className="bg-black text-white mt-12">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 text-center">
-          <p>© 2026 Jain Footwear e-Store</p>
+        <div className="max-w-7xl mx-auto px-6 py-8 text-center">
+          <p>
+            © 2026 Jain Footwear e-Store
+          </p>
         </div>
       </footer>
     </div>

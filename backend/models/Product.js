@@ -13,6 +13,12 @@ const designSchema = new mongoose.Schema(
       default: [],
     },
 
+    price: {
+  type: Number,
+  required: true,
+  min: 0,
+},
+
     stock: {
       type: Number,
       default: 0,

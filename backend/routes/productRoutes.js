@@ -83,9 +83,13 @@ router.post(
       let imageIndex = 0;
 
       for (const design of designs) {
-        const imageCount = Number(
-          design.imageCount || 0
-        );
+  design.price = Number(
+    design.price || req.body.price || 0
+  );
+
+  const imageCount = Number(
+    design.imageCount || 0
+  );
 
         const imagesForThisDesign =
           designImages.slice(
@@ -222,9 +226,13 @@ router.put(
         let imageIndex = 0;
 
         for (const design of designs) {
-          const imageCount = Number(
-            design.imageCount || 0
-          );
+  design.price = Number(
+    design.price || req.body.price || 0
+  );
+
+  const imageCount = Number(
+    design.imageCount || 0
+  );
 
           // Keep existing Cloudinary images
           const existingImages =
